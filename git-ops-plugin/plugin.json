@@ -1,0 +1,7 @@
+{
+  "name": "git-ops-plugin",
+  "version": "1.0.0",
+  "description": "Git operations plugin for Claude Code",
+  "author": "him0",
+  "commands": []
+}

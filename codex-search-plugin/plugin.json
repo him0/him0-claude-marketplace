@@ -1,0 +1,12 @@
+{
+  "name": "codex-search-plugin",
+  "version": "1.0.0",
+  "description": "Web search plugin using codex CLI",
+  "author": "him0",
+  "commands": [
+    {
+      "name": "codex-search",
+      "file": "commands/codex-search.md"
+    }
+  ]
+}

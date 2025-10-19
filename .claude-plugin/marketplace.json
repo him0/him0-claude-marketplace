@@ -1,0 +1,22 @@
+{
+  "name": "him0-claude-marketplace",
+  "version": "1.0.0",
+  "description": "Personal Claude Code plugin marketplace by him0",
+  "plugins": [
+    {
+      "name": "git-ops-plugin",
+      "path": "./git-ops-plugin",
+      "description": "Git operations plugin for Claude Code"
+    },
+    {
+      "name": "codex-search-plugin",
+      "path": "./codex-search-plugin",
+      "description": "Web search plugin using codex CLI"
+    },
+    {
+      "name": "gemini-search-plugin",
+      "path": "./gemini-search-plugin",
+      "description": "Web search plugin using Gemini CLI"
+    }
+  ]
+}
