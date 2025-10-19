@@ -1,12 +1,12 @@
 {
-  "name": "gemini-search-plugin",
+  "name": "him0-gemini-plugin",
   "version": "1.0.0",
   "description": "Web search plugin using Gemini CLI",
   "author": "him0",
   "commands": [
     {
-      "name": "gemini-search",
-      "file": "commands/gemini-search.md"
+      "name": "search",
+      "file": "commands/search.md"
     }
   ]
 }

@@ -1,21 +1,25 @@
 {
   "name": "him0-claude-marketplace",
+  "owner": {
+    "name": "him0",
+    "email": "him0@example.com"
+  },
   "version": "1.0.0",
   "description": "Personal Claude Code plugin marketplace by him0",
   "plugins": [
     {
-      "name": "git-ops-plugin",
-      "path": "./git-ops-plugin",
+      "name": "him0-git-ops-plugin",
+      "source": "./git-ops-plugin",
       "description": "Git operations plugin for Claude Code"
     },
     {
-      "name": "codex-search-plugin",
-      "path": "./codex-search-plugin",
+      "name": "him0-codex-plugin",
+      "source": "./codex-plugin",
       "description": "Web search plugin using codex CLI"
     },
     {
-      "name": "gemini-search-plugin",
-      "path": "./gemini-search-plugin",
+      "name": "him0-gemini-plugin",
+      "source": "./gemini-plugin",
       "description": "Web search plugin using Gemini CLI"
     }
   ]
