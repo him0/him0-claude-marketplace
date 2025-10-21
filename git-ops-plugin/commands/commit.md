@@ -38,7 +38,7 @@ Optional: scope, ! (breaking change), body, footer
 feat : New feature
 fix : Bug fix
 docs : Documentation only
-style : Formatting (whitespace, semicolons, etc.) no code change
+style : Formatting (whitespace, semicolons, etc.)
 refactor : Refactoring (not a feature, not a bug fix)
 perf : Performance improvement
 test : Add/modify tests
