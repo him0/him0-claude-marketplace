@@ -7,8 +7,8 @@ argument-hint: [--push | -p]
 # Quick Reference
 
 ```bash
-/_git-commit
-/_git-commit --push # Commit and push changes
+/commit
+/commit --push # Commit and push changes
 ```
 
 # Workflow
@@ -38,7 +38,7 @@ Optional: scope, ! (breaking change), body, footer
 feat : New feature
 fix : Bug fix
 docs : Documentation only
-style : Formatting (whitespace, semicolons, etc.) no
+style : Formatting (whitespace, semicolons, etc.)
 refactor : Refactoring (not a feature, not a bug fix)
 perf : Performance improvement
 test : Add/modify tests
