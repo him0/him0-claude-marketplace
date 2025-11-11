@@ -1,12 +1,17 @@
 {
   "name": "him0-codex-plugin",
   "version": "1.0.0",
-  "description": "Web search plugin using codex CLI",
+  "description": "Web search and codebase search plugin using codex CLI",
   "author": "him0",
   "commands": [
     {
       "name": "search",
       "file": "commands/search.md"
+    },
+    {
+      "name": "code-search",
+      "description": "search codebase files and content using sub-agent",
+      "file": "commands/code-search.md"
     }
   ]
 }
