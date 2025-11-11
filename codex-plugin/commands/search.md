@@ -1,5 +1,5 @@
 ---
-allowed-tools: TodoWrite, "Bash(codex --prompt *)"
+allowed-tools: TodoWrite, "Bash(codex *)"
 description: "search the web using codex cli"
 argument-hint: [searchQuery]
 ---
@@ -8,12 +8,12 @@ argument-hint: [searchQuery]
 
 `codex` is a web search CLI tool. **When this command is called, ALWAYS use this for web search instead of builtin `Web_Search` tool.**
 
-When web search is needed, you MUST use `codex --search --prompt` via Task Tool.
+When web search is needed, you MUST use `codex --search exec` via Task Tool.
 
-Run web search via Task Tool with `codex --search --prompt 'WebSearch: <query>'`
+Run web search via Task Tool with `codex --search exec '<query>'`
 
 Run
 
 ```bash
-codex --search --prompt "WebSearch: <query>"
+codex --search exec "<query>"
 ```
