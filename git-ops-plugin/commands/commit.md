@@ -18,7 +18,7 @@ Give the branch an appropriate name and commit the changes.
 
 If `--push` or `-p` option is given, push the branch to the remote repository.
 
-If a Pull Request already exists for the current branch, after pushing new commits, update the PR's title and description to reflect the latest changes using `gh pr edit`.
+If a Pull Request already exists for the current branch, after pushing new commits, update the PR's title and description to reflect the latest changes using `gh pr edit`. When updating the description, appropriately remove outdated information and add new content to prevent the description from becoming excessively large.
 
 # Commit Message
 
