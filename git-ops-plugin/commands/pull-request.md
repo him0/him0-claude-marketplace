@@ -26,18 +26,9 @@ If the `--draft` or `-d` option is provided, create a draft Pull Request instead
 
 ## Updating an Existing Pull Request
 
-If a Pull Request already exists for the current branch:
+If a Pull Request already exists:
 
 1. Push the latest commits to the remote branch
-2. Review all commits in the PR (use `git log main..HEAD` or equivalent to see all commits since the branch diverged)
-3. Update the PR title and description using `gh pr edit` to reflect the current state of changes
-4. **IMPORTANT**: When updating the description, completely rewrite it based on all commits in the PR - do NOT append to the existing description
-5. Analyze the full scope of changes and create a cohesive, well-structured description that accurately represents the entire PR
-6. Avoid redundancy and duplication in the description - each point should be mentioned once
-
-### Key Guidelines for PR Updates
-
-- **Rewrite, don't append**: Always generate a fresh description that encompasses all changes, rather than adding new content to the existing description
-- **Prevent description bloat**: Keep the description concise and avoid redundant information that may accumulate from multiple updates
-- **Reflect current state**: The title and description should accurately represent the complete set of changes in the PR, not just the latest commits
-- **Maintain consistency**: Follow the same template and style as new PR creation
+2. Review all commits in the PR (use `git log main..HEAD`)
+3. Update the PR title and description using `gh pr edit`
+4. Rewrite the description based on all commits - do not append to avoid redundancy
