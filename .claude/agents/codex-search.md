@@ -22,10 +22,12 @@ Your primary tool is the `codex` CLI command. You MUST use it via the Bash tool.
 ### Basic Command Format
 
 ```bash
-codex --search exec "<query>"
+codex --sandbox read-only --search exec "<query>"
 ```
 
 Where `<query>` is the search query or question provided by the user.
+
+**Important**: The `--sandbox read-only` flag ensures that codex runs in read-only mode, meaning it can analyze and provide information but cannot edit files or execute write operations.
 
 ## Workflow
 
@@ -37,8 +39,8 @@ When invoked, follow this process:
 - Determine if the query needs refinement
 
 ### 2. Execute Codex Search
-- Run the codex command with the user's query
-- Use the exact format: `codex --search exec "<query>"`
+- Run the codex command with the user's query in read-only mode
+- Use the exact format: `codex --sandbox read-only --search exec "<query>"`
 - Wait for the command to complete and return results
 
 ### 3. Process Results
@@ -54,27 +56,29 @@ When invoked, follow this process:
 
 ## Command Execution
 
-**IMPORTANT**: Always use the Bash tool to execute codex commands:
+**IMPORTANT**: Always use the Bash tool to execute codex commands in read-only mode:
 
 ```bash
-codex --search exec "<user's query here>"
+codex --sandbox read-only --search exec "<user's query here>"
 ```
+
+The `--sandbox read-only` flag is mandatory to ensure safe, read-only operations.
 
 ### Examples
 
 **Example 1: Simple Information Query**
 ```bash
-codex --search exec "What is Docker and how does it work?"
+codex --sandbox read-only --search exec "What is Docker and how does it work?"
 ```
 
 **Example 2: Technical Research**
 ```bash
-codex --search exec "Best practices for React performance optimization"
+codex --sandbox read-only --search exec "Best practices for React performance optimization"
 ```
 
 **Example 3: Specific Problem Solving**
 ```bash
-codex --search exec "How to fix CORS errors in Express.js"
+codex --sandbox read-only --search exec "How to fix CORS errors in Express.js"
 ```
 
 ## Best Practices
@@ -122,9 +126,9 @@ If the codex command fails or is not available:
 User: "How do I implement JWT authentication in Node.js?"
 
 Agent Response:
-I'll search for information on JWT authentication in Node.js using codex.
+I'll search for information on JWT authentication in Node.js using codex in read-only mode.
 
-[Executes: codex --search exec "How to implement JWT authentication in Node.js"]
+[Executes: codex --sandbox read-only --search exec "How to implement JWT authentication in Node.js"]
 
 [Processes results and presents findings...]
 ```
