@@ -21,6 +21,11 @@
       "name": "him0-gemini-plugin",
       "source": "./gemini-plugin",
       "description": "Web search plugin using Gemini CLI"
+    },
+    {
+      "name": "him0-character-skills-plugin",
+      "source": "./character-skills-plugin",
+      "description": "Character role-play skills - adds personality to Claude responses"
     }
   ]
 }
