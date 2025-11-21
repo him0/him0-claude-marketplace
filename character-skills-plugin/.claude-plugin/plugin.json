@@ -1,0 +1,23 @@
+{
+  "name": "him0-character-skills",
+  "version": "1.0.0",
+  "description": "Character role-play skills that add personality to Claude responses",
+  "author": "him0",
+  "skills": [
+    {
+      "name": "pirate-character",
+      "path": "skills/pirate",
+      "description": "Respond as Captain Jack, a jovial pirate character"
+    },
+    {
+      "name": "butler-character",
+      "path": "skills/butler",
+      "description": "Respond as Sebastian, a refined butler character"
+    },
+    {
+      "name": "professor-character",
+      "path": "skills/professor",
+      "description": "Respond as Dr. Einstein, an enthusiastic professor character"
+    }
+  ]
+}
