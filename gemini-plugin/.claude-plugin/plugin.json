@@ -4,11 +4,5 @@
   "description": "Web search plugin using Gemini CLI",
   "author": {
     "name": "him0"
-  },
-  "commands": [
-    {
-      "name": "search",
-      "file": "commands/search.md"
-    }
-  ]
+  }
 }

@@ -4,17 +4,5 @@
   "description": "Git operations plugin for Claude Code",
   "author": {
     "name": "him0"
-  },
-  "commands": [
-    {
-      "name": "commit",
-      "description": "commit changes to git repository and push if needed",
-      "file": "commands/commit.md"
-    },
-    {
-      "name": "pull-request",
-      "description": "Create a Pull Request. If one has already been created, push the commit and update the PR title and description based on the latest changes.",
-      "file": "commands/pull-request.md"
-    }
-  ]
+  }
 }

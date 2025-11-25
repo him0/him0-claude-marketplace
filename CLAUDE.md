@@ -28,16 +28,11 @@
 ```
 
 ### commands フィールド
-コマンドベースのプラグインでは、`commands` はオブジェクトの配列：
+`commands/` ディレクトリは自動検出されるため、通常は指定不要。
+カスタムパスを使用する場合のみパス文字列で指定：
 
 ```json
-"commands": [
-  {
-    "name": "commit",
-    "description": "commit changes",
-    "file": "commands/commit.md"
-  }
-]
+"commands": "./custom/commands/"
 ```
 
 ## ディレクトリ構造
