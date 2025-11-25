@@ -1,13 +1,9 @@
 {
-  "name": "him0-character-skills",
+  "name": "him0-character-skills-plugin",
   "version": "1.0.0",
   "description": "Character role-play skills that add personality to Claude responses",
-  "author": "him0",
-  "skills": [
-    {
-      "name": "character-roleplay",
-      "path": "skills/character-roleplay",
-      "description": "Respond with character personalities (pirate, butler, professor) when requested"
-    }
-  ]
+  "author": {
+    "name": "him0"
+  },
+  "skills": "./skills/"
 }

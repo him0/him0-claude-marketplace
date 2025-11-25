@@ -2,7 +2,9 @@
   "name": "him0-gemini-plugin",
   "version": "1.0.0",
   "description": "Web search plugin using Gemini CLI",
-  "author": "him0",
+  "author": {
+    "name": "him0"
+  },
   "commands": [
     {
       "name": "search",

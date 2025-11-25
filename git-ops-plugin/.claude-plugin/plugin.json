@@ -2,7 +2,9 @@
   "name": "him0-git-ops-plugin",
   "version": "1.0.0",
   "description": "Git operations plugin for Claude Code",
-  "author": "him0",
+  "author": {
+    "name": "him0"
+  },
   "commands": [
     {
       "name": "commit",
@@ -11,7 +13,7 @@
     },
     {
       "name": "pull-request",
-      "description": "Create a Pull Request. If one has already been created, push the commit to proceed with the PR.",
+      "description": "Create a Pull Request. If one has already been created, push the commit and update the PR title and description based on the latest changes.",
       "file": "commands/pull-request.md"
     }
   ]
