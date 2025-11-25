@@ -2,13 +2,13 @@
 
 このリポジトリは Claude Code 用のプラグインマーケットプレイスです。
 
-## plugin.json の正しい構成
+## plugin.json の構成
 
 ### 必須フィールド
 - `name`: プラグインの一意識別子 (kebab-case)
 
-### author フィールド (重要)
-`author` は**オブジェクト**である必要があります：
+### author フィールド
+`author` はオブジェクト形式：
 
 ```json
 "author": {
@@ -18,31 +18,11 @@
 }
 ```
 
-- `name` のみ必須、`email` と `url` は任意
-
-**誤った例:**
-```json
-"author": "him0"
-```
-
-**正しい例:**
-```json
-"author": { "name": "him0" }
-```
+`name` のみ必須、`email` と `url` は任意
 
 ### skills フィールド
-スキルベースのプラグインでは、`skills` は**パス文字列**です：
+スキルベースのプラグインでは、`skills` はパス文字列：
 
-```json
-"skills": "./skills/"
-```
-
-**誤った例:**
-```json
-"skills": [{ "name": "...", "path": "..." }]
-```
-
-**正しい例:**
 ```json
 "skills": "./skills/"
 ```
@@ -73,9 +53,12 @@ plugin-name/
     └── command-name.md
 ```
 
-**重要**: `plugin.json` は必ず `.claude-plugin/` ディレクトリ内に配置してください。
-
 ## プラグイン名の命名規則
 
 - marketplace.json の `plugins[].name` と plugin.json の `name` は一致させる
 - kebab-case を使用 (例: `him0-git-ops-plugin`)
+
+## 参照
+
+- [Plugins Guide](https://docs.anthropic.com/en/docs/claude-code/plugins) - プラグイン開発の概要
+- [Plugins Reference](https://docs.anthropic.com/en/docs/claude-code/plugins-reference) - plugin.json スキーマの詳細仕様
