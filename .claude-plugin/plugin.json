@@ -2,6 +2,8 @@
   "name": "him0-claude-marketplace",
   "version": "1.0.0",
   "description": "Claude Code marketplace for git operations and other plugins",
-  "author": "him0",
+  "author": {
+    "name": "him0"
+  },
   "license": "MIT"
 }
