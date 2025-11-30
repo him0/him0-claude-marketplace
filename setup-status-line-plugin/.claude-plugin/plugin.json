@@ -1,0 +1,9 @@
+{
+  "name": "setup-status-line-plugin",
+  "version": "1.0.0",
+  "description": "Setup status line script for Claude Code",
+  "author": {
+    "name": "him0",
+    "url": "https://github.com/him0"
+  }
+}
