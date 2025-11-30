@@ -26,6 +26,11 @@
       "name": "him0-character-skills-plugin",
       "source": "./character-skills-plugin",
       "description": "Character role-play skills - adds personality to Claude responses"
+    },
+    {
+      "name": "setup-status-line-plugin",
+      "source": "./setup-status-line-plugin",
+      "description": "Setup status line script for Claude Code"
     }
   ]
 }
