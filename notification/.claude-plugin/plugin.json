@@ -1,5 +1,5 @@
 {
-  "name": "him0-notification-plugin",
+  "name": "notification",
   "version": "1.0.0",
   "description": "Desktop notification plugin with tmux passthrough support for iTerm2",
   "author": {
