@@ -66,7 +66,7 @@ function generateStatusLine(data) {
     }
 
     // Check for dirty (including untracked)
-    const status = execSync('git status --no-optional-locks --porcelain -unormal --ignore-submodules=dirty', { encoding: 'utf8', stdio: 'pipe' });
+    const status = execSync('git --no-optional-locks status --porcelain -unormal --ignore-submodules=dirty', { encoding: 'utf8', stdio: 'pipe' });
     if (status.trim()) {
       branch += '*';
     }
