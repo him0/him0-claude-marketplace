@@ -1,5 +1,5 @@
 {
-  "name": "him0-git-ops-plugin",
+  "name": "him0-git-ops",
   "version": "1.0.0",
   "description": "Git operations plugin for Claude Code",
   "author": {

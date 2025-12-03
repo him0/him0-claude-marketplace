@@ -1,5 +1,5 @@
 {
-  "name": "him0-gemini-plugin",
+  "name": "him0-gemini",
   "version": "1.0.0",
   "description": "Web search plugin using Gemini CLI",
   "author": {

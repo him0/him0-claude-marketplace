@@ -1,5 +1,5 @@
 {
-  "name": "him0-codex-plugin",
+  "name": "him0-codex",
   "version": "1.0.0",
   "description": "Web search plugin using codex CLI",
   "author": {

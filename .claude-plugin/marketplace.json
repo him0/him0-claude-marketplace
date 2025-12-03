@@ -2,29 +2,29 @@
   "name": "him0-claude-marketplace",
   "owner": {
     "name": "him0",
-    "email": "him0@example.com"
+    "email": "nakashimaorz@gmail.com"
   },
   "version": "1.0.0",
   "description": "Personal Claude Code plugin marketplace by him0",
   "plugins": [
     {
-      "name": "him0-git-ops-plugin",
-      "source": "./git-ops-plugin",
+      "name": "him0-git-ops",
+      "source": "./git-ops",
       "description": "Git operations plugin for Claude Code"
     },
     {
-      "name": "him0-codex-plugin",
-      "source": "./codex-plugin",
+      "name": "him0-codex",
+      "source": "./codex",
       "description": "Web search plugin using codex CLI"
     },
     {
-      "name": "him0-gemini-plugin",
-      "source": "./gemini-plugin",
+      "name": "him0-gemini",
+      "source": "./gemini",
       "description": "Web search plugin using Gemini CLI"
     },
     {
-      "name": "him0-character-skills-plugin",
-      "source": "./character-skills-plugin",
+      "name": "him0-character-skills",
+      "source": "./character-skills",
       "description": "Character role-play skills - adds personality to Claude responses"
     },
     {
