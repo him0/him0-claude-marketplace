@@ -28,12 +28,12 @@
       "description": "Character role-play skills - adds personality to Claude responses"
     },
     {
-      "name": "setup-status-line-plugin",
-      "source": "./setup-status-line-plugin",
+      "name": "him0-setup-status-line",
+      "source": "./setup-status-line",
       "description": "Setup status line script for Claude Code"
     },
     {
-      "name": "notification",
+      "name": "him0-notification",
       "source": "./notification",
       "description": "Desktop notification plugin with tmux passthrough support for iTerm2"
     }
