@@ -4,6 +4,5 @@
   "description": "Desktop notification plugin with tmux passthrough support for iTerm2",
   "author": {
     "name": "him0"
-  },
-  "hooks": "./hooks/hooks.json"
+  }
 }
