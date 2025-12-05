@@ -1,7 +1,16 @@
 ---
-allowed-tools: TodoWrite, "Bash(gh *)", "Bash(git switch *)", "Bash(git add *)", "Bash(git commit *)", "Bash(git push *)"
 description: "commit changes to git repository and push if needed"
 argument-hint: [--push | -p]
+allowed-tools:
+  - TodoWrite
+  - "Bash(gh *)"
+  - "Bash(git switch *)"
+  - "Bash(git add *)"
+  - "Bash(git commit *)"
+  - "Bash(git push *)"
+  - "Bash(git rev-parse *)"
+  - "Bash(git log *)"
+  - "Bash(git diff *)"
 ---
 
 # Quick Reference
