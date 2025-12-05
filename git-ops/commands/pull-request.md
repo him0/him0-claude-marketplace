@@ -24,8 +24,8 @@ allowed-tools:
 
 # Workflow
 
-Use `/him0-git-ops-plugin:commit --push` to commit and push changes.
-If the current branch is `main`, a new branch will be created automatically.
+Use `/him0-git-ops:commit --push` to commit and push changes.
+If the current branch is the default branch, a new branch will be created automatically.
 
 ## Creating a New Pull Request
 
@@ -40,6 +40,6 @@ If the `--draft` or `-d` option is provided, create a draft Pull Request instead
 If a Pull Request already exists:
 
 1. Push the latest commits to the remote branch
-2. Review all commits in the PR (use `git log main..HEAD`)
+2. Review all commits in the PR (use `git log <default-branch>..HEAD`)
 3. Update the PR title and description using `gh pr edit`
 4. Rewrite the description based on all commits - do not append to avoid redundancy
