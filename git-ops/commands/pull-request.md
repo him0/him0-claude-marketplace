@@ -1,6 +1,6 @@
 ---
 description: "Create a Pull Request. If one has already been created, push the commit and update the PR title and description based on the latest changes."
-argument-hint: [--draft | -d] [<Ticket-URL>]
+argument-hint: [--draft | -d] [--stack] [<Ticket-URL>]
 allowed-tools:
   - TodoWrite
   - "Bash(gh *)"
@@ -18,8 +18,9 @@ allowed-tools:
 # Quick Reference
 
 ```bash
-/_git-pull-request
-/_git-pull-request --draft # Create a draft PR
+/pull-request
+/pull-request --draft  # Create a draft PR
+/pull-request --stack  # Create stacked PR with current branch as base
 ```
 
 # Workflow
@@ -43,3 +44,14 @@ If a Pull Request already exists:
 2. Review all commits in the PR (use `git log <default-branch>..HEAD`)
 3. Update the PR title and description using `gh pr edit`
 4. Rewrite the description based on all commits - do not append to avoid redundancy
+
+## Creating a Stacked Pull Request
+
+If `--stack` option is provided:
+
+1. Get the current branch name (this will be the base branch for the new PR)
+2. Create a new branch with auto-generated name (e.g., `<current-branch>-part2`, `<current-branch>-part3`)
+3. Commit and push changes to the new branch
+4. Create a new PR with `gh pr create --base <current-branch>`
+
+This is useful for splitting a large PR into smaller, reviewable pieces.
