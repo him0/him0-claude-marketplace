@@ -1,7 +1,16 @@
 ---
-allowed-tools: TodoWrite, "Bash(gh *)", "Bash(git switch *)", "Bash(git add *)", "Bash(git commit *)", "Bash(git push *)"
 description: "commit changes to git repository and push if needed"
 argument-hint: [--push | -p]
+allowed-tools:
+  - TodoWrite
+  - "Bash(gh *)"
+  - "Bash(git switch *)"
+  - "Bash(git add *)"
+  - "Bash(git commit *)"
+  - "Bash(git push *)"
+  - "Bash(git rev-parse *)"
+  - "Bash(git log *)"
+  - "Bash(git diff *)"
 ---
 
 # Quick Reference
@@ -13,7 +22,13 @@ argument-hint: [--push | -p]
 
 # Workflow
 
-If the current branch is `main` and there are differences, create a new branch.
+Run these commands in parallel to gather information:
+- `git status`
+- `git diff`
+- `git log --oneline -5`
+- `gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name'` (to get default branch)
+
+If the current branch is the default branch and there are differences, create a new branch.
 Give the branch an appropriate name and commit the changes.
 
 If `--push` or `-p` option is given, push the branch to the remote repository.
