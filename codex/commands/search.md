@@ -6,14 +6,12 @@ argument-hint: [searchQuery]
 
 ## Codex Search
 
-`codex` is a web search CLI tool. **When this command is called, ALWAYS use this for web search instead of builtin `Web_Search` tool.**
-
-When web search is needed, you MUST use `codex --search exec` via Task Tool.
+`codex` is openai codex cli.
 
 Run web search via Task Tool with `codex --search exec '<query>'`
 
 Run
 
 ```bash
-codex --search exec "<query>"
+codex --search exec --json --color never "Search: <query>"
 ```
