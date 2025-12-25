@@ -21,56 +21,32 @@ This skill creates a standalone HTML file with:
 
 ## Step 1: Gather Repository Data
 
-Run these commands to collect all necessary data:
+**重要**: 以下の3つのコマンドを**並列で**実行してください。これにより実行時間を大幅に短縮できます。
 
 ```bash
-# Basic info
-REPO_NAME=$(basename $(git rev-parse --show-toplevel))
-YEAR="2025"
+# === コマンド1: 基本コミットデータ (1回のgit logで全データ取得) ===
+git log --since="2025-01-01" --until="2025-12-31" --format="COMMIT_START%n%ad%n%aN%n%s%nCOMMIT_END" --date=format:"%Y-%m-%d %H %u" 2>/dev/null
 
-# Daily commits for heatmap
-git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%ad" --date=short 2>/dev/null | sort | uniq -c | awk '{print "{\"date\":\"" $2 "\",\"count\":" $1 "}"}' | paste -sd "," - | sed 's/^/[/' | sed 's/$/]/'
+# === コマンド2: PR/Issue データ (並列実行可) ===
+gh pr list --state all --search "created:2025-01-01..2025-12-31" --json number,title,author,comments,additions,deletions,changedFiles --limit 100 2>/dev/null || echo "[]"
+gh issue list --state all --search "created:2025-01-01..2025-12-31" --json number,title,author,comments --limit 100 2>/dev/null || echo "[]"
 
-# Hourly distribution
-git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%H" 2>/dev/null | sort | uniq -c | awk '{print "{\"hour\":" $2 ",\"count\":" $1 "}"}' | paste -sd "," - | sed 's/^/[/' | sed 's/$/]/'
-
-# Day of week distribution
-git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%u" 2>/dev/null | sort | uniq -c | awk '{print "{\"day\":" $2 ",\"count\":" $1 "}"}' | paste -sd "," - | sed 's/^/[/' | sed 's/$/]/'
-
-# Contributors with commit counts
-git shortlog -sne --since="${YEAR}-01-01" --until="${YEAR}-12-31" 2>/dev/null | head -20 | awk -F'\t' '{gsub(/^[ \t]+/, "", $1); split($2, a, " <"); print "{\"commits\":" $1 ",\"name\":\"" a[1] "\",\"email\":\"" a[2] }' | sed 's/<$/"}/' | paste -sd "," - | sed 's/^/[/' | sed 's/$/]/'
-
-# Commit messages for analysis
-git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%s" 2>/dev/null
-
-# Lines added/removed per month
-for month in $(seq -w 1 12); do
-  added=$(git log --since="${YEAR}-${month}-01" --until="${YEAR}-${month}-31" --numstat 2>/dev/null | awk '{add+=$1} END {print add+0}')
-  removed=$(git log --since="${YEAR}-${month}-01" --until="${YEAR}-${month}-31" --numstat 2>/dev/null | awk '{del+=$2} END {print del+0}')
-  commits=$(git log --since="${YEAR}-${month}-01" --until="${YEAR}-${month}-31" --oneline 2>/dev/null | wc -l | tr -d ' ')
-  echo "{\"month\":${month},\"added\":${added},\"removed\":${removed},\"commits\":${commits}}"
-done | paste -sd "," - | sed 's/^/[/' | sed 's/$/]/'
-
-# Most changed files
-git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --name-only --format="" 2>/dev/null | sort | uniq -c | sort -rn | head -10
-
-# File types/languages
-git ls-files 2>/dev/null | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -10
-
-# Streak calculation (longest consecutive days)
-git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%ad" --date=short 2>/dev/null | sort -u
-
-# PR and Issue stats (if gh CLI available)
-gh pr list --state all --search "created:${YEAR}-01-01..${YEAR}-12-31" --json number,title,author,comments,additions,deletions,changedFiles --limit 100 2>/dev/null || echo "[]"
-gh issue list --state all --search "created:${YEAR}-01-01..${YEAR}-12-31" --json number,title,author,comments --limit 100 2>/dev/null || echo "[]"
-
-# Per-contributor stats for achievements (JSON object keyed by author name)
-# Night commits (0-4am) per contributor
-git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%aN|%H" --date=format:"%H" 2>/dev/null | while IFS='|' read name hour; do echo "$name"; done | sort | uniq -c
-
-# Per-contributor commit with hour and day info
-git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%aN	%ad	%s" --date=format:"%H %u" 2>/dev/null
+# === コマンド3: リポジトリ名 ===
+basename $(git rev-parse --show-toplevel)
 ```
+
+### ワンライナーでJSON変換
+
+以下のコマンドで `rawCommits` JSONを直接生成できる:
+
+```bash
+git log --since="2025-01-01" --until="2025-12-31" --format="COMMIT_START%n%ad%n%aN%n%s%nCOMMIT_END" --date=format:"%Y-%m-%d %H %u" 2>/dev/null | awk 'BEGIN{first=1} /^COMMIT_START$/{getline d;getline n;getline m;getline e;split(d,a," ");gsub(/"/,"\\\"",n);gsub(/"/,"\\\"",m);if(first==0)printf",";printf"{\"date\":\"%s\",\"hour\":%d,\"day\":%d,\"name\":\"%s\",\"message\":\"%s\"}",a[1],a[2],a[3],n,m;first=0}END{print""}' | sed 's/^/[/' | sed 's/$/]/'
+```
+
+テンプレート内のJavaScriptが `rawCommits` から以下を自動計算:
+- dailyCommits, hourlyData, weeklyData, monthlyData
+- contributors, contributorCommits, commitMessages
+- longestStreak, stats
 
 ## Step 2: Generate HTML
 
@@ -146,32 +122,13 @@ The HTML should include:
 
 Use the template from: `skills/repo-recap/templates/recap.html`
 
-Read the template file and replace the following placeholders with actual data:
+**プレースホルダーは4つだけ！** テンプレート内で全データを自動計算します:
 
-- `{{REPO_NAME}}` - Repository name
-- `{{YEAR}}` - Year (2025)
-- `{{TOTAL_COMMITS}}` - Total commit count
-- `{{TOTAL_PRS}}` - Total PR count
-- `{{TOTAL_ISSUES}}` - Total issue count
-- `{{CONTRIBUTORS_COUNT}}` - Number of contributors
-- `{{LINES_ADDED}}` - Total lines added
-- `{{LINES_REMOVED}}` - Total lines removed
-- `{{DAILY_COMMITS_JSON}}` - JSON array of daily commits
-- `{{HOURLY_DATA_JSON}}` - JSON array of hourly distribution
-- `{{WEEKLY_DATA_JSON}}` - JSON array of day-of-week distribution
-- `{{MONTHLY_DATA_JSON}}` - JSON array of monthly stats
-- `{{CONTRIBUTORS_JSON}}` - JSON array of contributors
-- `{{CONTRIBUTOR_COMMITS_JSON}}` - JSON array of per-contributor commits with hour/day/message
-- `{{TOP_FILES_JSON}}` - JSON array of most changed files
-- `{{LANGUAGES_JSON}}` - JSON array of language distribution
-- `{{COMMIT_MESSAGES_JSON}}` - JSON array of commit messages for analysis
-- `{{PRS_JSON}}` - JSON array of PRs
-- `{{ISSUES_JSON}}` - JSON array of issues
-- `{{ACHIEVEMENTS_JSON}}` - JSON array of unlocked achievements
-- `{{LONGEST_STREAK}}` - Longest consecutive commit days
-- `{{NIGHT_OWL_PERCENT}}` - Percentage of commits between 0-4am
-- `{{EARLY_BIRD_PERCENT}}` - Percentage of commits between 5-8am
-- `{{WEEKEND_PERCENT}}` - Percentage of weekend commits
+- `{{REPO_NAME}}` - リポジトリ名
+- `{{YEAR}}` - 年 (2025)
+- `{{RAW_COMMITS_JSON}}` - コミットデータ配列 `[{date, hour, day, name, message}, ...]`
+- `{{PRS_JSON}}` - PRデータ (gh pr listの出力)
+- `{{ISSUES_JSON}}` - Issueデータ (gh issue listの出力、なければ `[]`)
 
 ## Step 4: Open in Browser
 

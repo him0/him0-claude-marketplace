@@ -412,30 +412,103 @@
 
   <script>
     // ========================================
-    // DATA - Replace these with actual values
+    // RAW DATA - Only these need to be replaced
     // ========================================
     const REPO_NAME = "{{REPO_NAME}}";
     const YEAR = "{{YEAR}}";
 
-    const stats = {
-      commits: {{TOTAL_COMMITS}},
-      prs: {{TOTAL_PRS}},
-      issues: {{TOTAL_ISSUES}},
-      contributors: {{CONTRIBUTORS_COUNT}},
-      linesAdded: {{LINES_ADDED}},
-      linesRemoved: {{LINES_REMOVED}}
-    };
+    // Raw commit data: [{date, hour, day, name, message}, ...]
+    const rawCommits = {{RAW_COMMITS_JSON}};
 
-    const dailyCommits = {{DAILY_COMMITS_JSON}};
-    const hourlyData = {{HOURLY_DATA_JSON}};
-    const weeklyData = {{WEEKLY_DATA_JSON}};
-    const monthlyData = {{MONTHLY_DATA_JSON}};
-    const contributors = {{CONTRIBUTORS_JSON}};
-    const contributorCommits = {{CONTRIBUTOR_COMMITS_JSON}}; // [{name, hour, day, message}, ...]
-    const commitMessages = {{COMMIT_MESSAGES_JSON}};
+    // PR/Issue data from GitHub CLI
     const prs = {{PRS_JSON}};
     const issues = {{ISSUES_JSON}};
-    const longestStreak = {{LONGEST_STREAK}};
+
+    // ========================================
+    // COMPUTED DATA (auto-calculated from rawCommits)
+    // ========================================
+    // Daily commits for heatmap
+    const dailyCommitsMap = {};
+    rawCommits.forEach(c => {
+      dailyCommitsMap[c.date] = (dailyCommitsMap[c.date] || 0) + 1;
+    });
+    const dailyCommits = Object.entries(dailyCommitsMap).map(([date, count]) => ({date, count}));
+
+    // Hourly distribution
+    const hourlyMap = {};
+    rawCommits.forEach(c => {
+      hourlyMap[c.hour] = (hourlyMap[c.hour] || 0) + 1;
+    });
+    const hourlyData = Object.entries(hourlyMap).map(([hour, count]) => ({hour: parseInt(hour), count}));
+
+    // Weekly distribution
+    const weeklyMap = {};
+    rawCommits.forEach(c => {
+      weeklyMap[c.day] = (weeklyMap[c.day] || 0) + 1;
+    });
+    const weeklyData = Object.entries(weeklyMap).map(([day, count]) => ({day: parseInt(day), count}));
+
+    // Monthly data
+    const monthlyMap = {};
+    for (let m = 1; m <= 12; m++) monthlyMap[m] = {commits: 0, added: 0, removed: 0};
+    rawCommits.forEach(c => {
+      const month = parseInt(c.date.split('-')[1]);
+      monthlyMap[month].commits++;
+    });
+    // Add PR additions/deletions to monthly stats
+    prs.forEach(pr => {
+      if (pr.additions !== undefined) {
+        // Estimate month from PR (assume current month or use createdAt if available)
+        const month = new Date().getMonth() + 1;
+        monthlyMap[month].added += pr.additions || 0;
+        monthlyMap[month].removed += pr.deletions || 0;
+      }
+    });
+    const monthlyData = Object.entries(monthlyMap).map(([month, data]) => ({month: parseInt(month), ...data}));
+
+    // Contributors
+    const contribMap = {};
+    rawCommits.forEach(c => {
+      contribMap[c.name] = (contribMap[c.name] || 0) + 1;
+    });
+    const contributors = Object.entries(contribMap)
+      .map(([name, commits]) => ({name, commits}))
+      .sort((a, b) => b.commits - a.commits);
+
+    // Contributor commits (same as rawCommits, used for achievements)
+    const contributorCommits = rawCommits;
+
+    // Commit messages
+    const commitMessages = rawCommits.map(c => c.message);
+
+    // Stats
+    const totalLinesAdded = prs.reduce((sum, pr) => sum + (pr.additions || 0), 0);
+    const totalLinesRemoved = prs.reduce((sum, pr) => sum + (pr.deletions || 0), 0);
+
+    const stats = {
+      commits: rawCommits.length,
+      prs: prs.length,
+      issues: issues.length,
+      contributors: contributors.length,
+      linesAdded: totalLinesAdded,
+      linesRemoved: totalLinesRemoved
+    };
+
+    // Longest streak calculation
+    const sortedDates = [...new Set(rawCommits.map(c => c.date))].sort();
+    let longestStreak = 0, currentStreak = 1;
+    for (let i = 1; i < sortedDates.length; i++) {
+      const prev = new Date(sortedDates[i-1]);
+      const curr = new Date(sortedDates[i]);
+      const diffDays = (curr - prev) / (1000 * 60 * 60 * 24);
+      if (diffDays === 1) {
+        currentStreak++;
+        longestStreak = Math.max(longestStreak, currentStreak);
+      } else {
+        currentStreak = 1;
+      }
+    }
+    longestStreak = Math.max(longestStreak, currentStreak);
 
     // ========================================
     // CONFETTI ON LOAD
