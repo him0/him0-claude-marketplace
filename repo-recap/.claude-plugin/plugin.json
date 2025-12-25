@@ -1,0 +1,9 @@
+{
+  "name": "him0-repo-recap",
+  "version": "1.0.0",
+  "description": "Generate a beautiful 2025 year-in-review visualization for your repository",
+  "author": {
+    "name": "him0"
+  },
+  "skills": "./skills/"
+}
