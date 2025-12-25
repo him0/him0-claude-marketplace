@@ -87,10 +87,24 @@
       transition: all 0.3s ease;
     }
     .achievement:hover {
-      transform: scale(1.1) rotate(5deg);
+      transform: scale(1.05);
     }
     .achievement.locked {
       filter: grayscale(100%) opacity(0.3);
+    }
+
+    .achievement-avatars {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .achievement-avatars img {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(102, 126, 234, 0.5);
     }
 
     .avatar-ring {
@@ -417,6 +431,7 @@
     const weeklyData = {{WEEKLY_DATA_JSON}};
     const monthlyData = {{MONTHLY_DATA_JSON}};
     const contributors = {{CONTRIBUTORS_JSON}};
+    const contributorCommits = {{CONTRIBUTOR_COMMITS_JSON}}; // [{name, hour, day, message}, ...]
     const commitMessages = {{COMMIT_MESSAGES_JSON}};
     const prs = {{PRS_JSON}};
     const issues = {{ISSUES_JSON}};
@@ -791,36 +806,105 @@
     analyzeCommitMessages();
 
     // ========================================
-    // ACHIEVEMENTS
+    // ACHIEVEMENTS (per-contributor)
     // ========================================
     function setupAchievements() {
-      const total = stats.commits;
-      const nightCommits = hourlyData.filter(h => h.hour >= 0 && h.hour < 5).reduce((a, b) => a + b.count, 0);
-      const weekendCommits = weeklyData.filter(w => w.day >= 6).reduce((a, b) => a + b.count, 0);
+      // Build per-contributor stats from contributorCommits
+      const contribStats = {};
+      contributors.forEach(c => {
+        contribStats[c.name] = {
+          name: c.name,
+          commits: c.commits,
+          nightCommits: 0,
+          morningCommits: 0,
+          weekendCommits: 0,
+          commitTypes: { feat: 0, fix: 0, docs: 0, refactor: 0, chore: 0, test: 0 }
+        };
+      });
 
-      const achievements = [
-        { icon: '🦉', name: 'Night Owl', desc: '50+ late night commits', unlocked: nightCommits >= 50 },
-        { icon: '🔥', name: 'On Fire', desc: '30 day streak', unlocked: longestStreak >= 30 },
-        { icon: '📚', name: 'Documenter', desc: '20+ doc commits', unlocked: commitMessages.filter(m => m.toLowerCase().startsWith('docs')).length >= 20 },
-        { icon: '🧹', name: 'Janitor', desc: '30+ refactors', unlocked: commitMessages.filter(m => m.toLowerCase().startsWith('refactor')).length >= 30 },
-        { icon: '💣', name: 'Big Bang', desc: '1000+ line change', unlocked: stats.linesAdded >= 1000 },
-        { icon: '🤝', name: 'Team Player', desc: '10+ co-authored', unlocked: commitMessages.filter(m => m.toLowerCase().includes('co-authored')).length >= 10 },
-        { icon: '🌅', name: 'Early Bird', desc: '30+ morning commits', unlocked: hourlyData.filter(h => h.hour >= 5 && h.hour < 9).reduce((a, b) => a + b.count, 0) >= 30 },
-        { icon: '📅', name: 'Weekend Warrior', desc: '100+ weekend commits', unlocked: weekendCommits >= 100 },
-        { icon: '🚀', name: 'Rocket', desc: '500+ commits', unlocked: total >= 500 },
-        { icon: '⭐', name: 'Star', desc: '100+ commits', unlocked: total >= 100 },
-        { icon: '🎯', name: 'Consistent', desc: 'Commit every month', unlocked: monthlyData.every(m => m.commits > 0) },
-        { icon: '🎭', name: 'Versatile', desc: '5+ commit types', unlocked: true }
+      // Process contributorCommits to calculate per-contributor stats
+      contributorCommits.forEach(cc => {
+        const stat = contribStats[cc.name];
+        if (!stat) return;
+
+        const hour = parseInt(cc.hour);
+        const day = parseInt(cc.day);
+        const msg = (cc.message || '').toLowerCase();
+
+        // Night commits (0-4am)
+        if (hour >= 0 && hour < 5) stat.nightCommits++;
+        // Morning commits (5-8am)
+        if (hour >= 5 && hour < 9) stat.morningCommits++;
+        // Weekend commits (day 6=Sat, 7=Sun)
+        if (day >= 6) stat.weekendCommits++;
+
+        // Commit types
+        if (msg.startsWith('feat')) stat.commitTypes.feat++;
+        else if (msg.startsWith('fix')) stat.commitTypes.fix++;
+        else if (msg.startsWith('docs')) stat.commitTypes.docs++;
+        else if (msg.startsWith('refactor')) stat.commitTypes.refactor++;
+        else if (msg.startsWith('chore')) stat.commitTypes.chore++;
+        else if (msg.startsWith('test')) stat.commitTypes.test++;
+      });
+
+      // Helper to get GitHub avatar URL
+      function getAvatarUrl(name) {
+        const username = name.toLowerCase().replace(/\s+/g, '');
+        return `https://github.com/${username}.png`;
+      }
+
+      function getFallbackAvatar(name) {
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=667eea&color=fff&size=48`;
+      }
+
+      // Define achievements with per-contributor check functions
+      const achievementDefs = [
+        { icon: '🦉', name: 'Night Owl', desc: '10+ night commits', check: s => s.nightCommits >= 10 },
+        { icon: '🌅', name: 'Early Bird', desc: '10+ morning commits', check: s => s.morningCommits >= 10 },
+        { icon: '📅', name: 'Weekend Warrior', desc: '10+ weekend commits', check: s => s.weekendCommits >= 10 },
+        { icon: '⭐', name: 'Star', desc: '20+ commits', check: s => s.commits >= 20 },
+        { icon: '🚀', name: 'Rocket', desc: '50+ commits', check: s => s.commits >= 50 },
+        { icon: '📚', name: 'Documenter', desc: '5+ doc commits', check: s => s.commitTypes.docs >= 5 },
+        { icon: '🧹', name: 'Refactorer', desc: '5+ refactors', check: s => s.commitTypes.refactor >= 5 },
+        { icon: '🔧', name: 'Fixer', desc: '5+ fixes', check: s => s.commitTypes.fix >= 5 },
+        { icon: '✨', name: 'Feature King', desc: '5+ features', check: s => s.commitTypes.feat >= 5 },
+        { icon: '🎭', name: 'Versatile', desc: '3+ commit types', check: s => Object.values(s.commitTypes).filter(v => v > 0).length >= 3 },
+        { icon: '💯', name: 'Centurion', desc: '100+ commits', check: s => s.commits >= 100 },
+        { icon: '🔥', name: 'On Fire', desc: 'Most commits', check: (s, all) => s.commits === Math.max(...all.map(a => a.commits)) }
       ];
 
+      const allStats = Object.values(contribStats);
+
       const container = document.getElementById('achievements');
-      achievements.forEach(a => {
+      achievementDefs.forEach(aDef => {
+        // Find contributors who earned this achievement
+        const earners = allStats.filter(s => aDef.check(s, allStats));
+        const hasEarners = earners.length > 0;
+
         const div = document.createElement('div');
-        div.className = `achievement text-center p-4 rounded-xl glass ${a.unlocked ? '' : 'locked'}`;
+        div.className = `achievement text-center p-4 rounded-xl glass ${hasEarners ? '' : 'locked'}`;
+
+        // Build avatar HTML for earners
+        let avatarsHtml = '';
+        if (hasEarners) {
+          avatarsHtml = '<div class="achievement-avatars">';
+          earners.slice(0, 5).forEach(e => {
+            avatarsHtml += `<img src="${getAvatarUrl(e.name)}"
+                                 onerror="this.src='${getFallbackAvatar(e.name)}'"
+                                 alt="${e.name}"
+                                 title="${e.name}">`;
+          });
+          if (earners.length > 5) {
+            avatarsHtml += `<span class="text-xs text-gray-400">+${earners.length - 5}</span>`;
+          }
+          avatarsHtml += '</div>';
+        }
+
         div.innerHTML = `
-          <div class="text-3xl mb-2">${a.icon}</div>
-          <div class="font-semibold text-sm">${a.name}</div>
-          <div class="text-xs text-gray-500">${a.desc}</div>
+          <div class="text-3xl mb-2">${aDef.icon}</div>
+          <div class="font-semibold text-sm">${aDef.name}</div>
+          <div class="text-xs text-gray-500">${aDef.desc}</div>
+          ${avatarsHtml}
         `;
         container.appendChild(div);
       });

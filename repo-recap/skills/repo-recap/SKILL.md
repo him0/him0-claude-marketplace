@@ -63,6 +63,13 @@ git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%ad" --date=sh
 # PR and Issue stats (if gh CLI available)
 gh pr list --state all --search "created:${YEAR}-01-01..${YEAR}-12-31" --json number,title,author,comments,additions,deletions,changedFiles --limit 100 2>/dev/null || echo "[]"
 gh issue list --state all --search "created:${YEAR}-01-01..${YEAR}-12-31" --json number,title,author,comments --limit 100 2>/dev/null || echo "[]"
+
+# Per-contributor stats for achievements (JSON object keyed by author name)
+# Night commits (0-4am) per contributor
+git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%aN|%H" --date=format:"%H" 2>/dev/null | while IFS='|' read name hour; do echo "$name"; done | sort | uniq -c
+
+# Per-contributor commit with hour and day info
+git log --since="${YEAR}-01-01" --until="${YEAR}-12-31" --format="%aN	%ad	%s" --date=format:"%H %u" 2>/dev/null
 ```
 
 ## Step 2: Generate HTML
@@ -115,9 +122,9 @@ The HTML should include:
    - Longest/shortest message
 
 8. **Achievement Badges**
-   - Unlocked achievements with icons
-   - Locked achievements grayed out
-   - Hover effects
+   - Each achievement shows contributor avatars who earned it
+   - Achievements without earners are grayed out
+   - Hover effects with contributor names
 
 9. **Hot Moments**
    - Most commented PRs/Issues
@@ -154,6 +161,7 @@ Read the template file and replace the following placeholders with actual data:
 - `{{WEEKLY_DATA_JSON}}` - JSON array of day-of-week distribution
 - `{{MONTHLY_DATA_JSON}}` - JSON array of monthly stats
 - `{{CONTRIBUTORS_JSON}}` - JSON array of contributors
+- `{{CONTRIBUTOR_COMMITS_JSON}}` - JSON array of per-contributor commits with hour/day/message
 - `{{TOP_FILES_JSON}}` - JSON array of most changed files
 - `{{LANGUAGES_JSON}}` - JSON array of language distribution
 - `{{COMMIT_MESSAGES_JSON}}` - JSON array of commit messages for analysis
