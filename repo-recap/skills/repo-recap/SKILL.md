@@ -35,13 +35,32 @@ gh issue list --state all --search "created:2025-01-01..2025-12-31" --json numbe
 basename $(git rev-parse --show-toplevel)
 ```
 
-### ワンライナーでJSON変換
+### データ取得
 
-以下のコマンドで `rawCommits` JSONを直接生成できる:
+git logでパイプ区切りのシンプルな形式で取得:
 
 ```bash
-git log --since="2025-01-01" --until="2025-12-31" --format="COMMIT_START%n%ad%n%aN%n%s%nCOMMIT_END" --date=format:"%Y-%m-%d %H %u" 2>/dev/null | awk 'BEGIN{first=1} /^COMMIT_START$/{getline d;getline n;getline m;getline e;split(d,a," ");gsub(/"/,"\\\"",n);gsub(/"/,"\\\"",m);if(first==0)printf",";printf"{\"date\":\"%s\",\"hour\":%d,\"day\":%d,\"name\":\"%s\",\"message\":\"%s\"}",a[1],a[2],a[3],n,m;first=0}END{print""}' | sed 's/^/[/' | sed 's/$/]/'
+git log --since="2025-01-01" --until="2025-12-31" --format="%ad|%aN|%s" --date=format:"%Y-%m-%d|%H|%u" 2>/dev/null
 ```
+
+出力例:
+```
+2025-12-25|14|4|Hiroki|fix: bug
+2025-12-24|09|3|Jane|feat: new feature
+```
+
+### データ変換
+
+上記の出力をClaude Codeが以下のJSON形式に変換:
+
+```json
+[
+  {"date": "2025-12-25", "hour": 14, "day": 4, "name": "Hiroki", "message": "fix: bug"},
+  ...
+]
+```
+
+**重要**: awkやsedを使わず、Claude Code自身がこの変換を行ってください。
 
 テンプレート内のJavaScriptが `rawCommits` から以下を自動計算:
 - dailyCommits, hourlyData, weeklyData, monthlyData
