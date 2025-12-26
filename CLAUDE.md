@@ -53,6 +53,16 @@ plugin-name/
 - marketplace.json の `plugins[].name` と plugin.json の `name` は一致させる
 - kebab-case を使用 (例: `him0-git-ops-plugin`)
 
+## プラグイン更新時の注意
+
+プラグインを更新した際は、必ず `plugin.json` の `version` を上げること。
+
+```json
+"version": "1.0.1"  // 更新時にインクリメント
+```
+
+バージョンを上げないと `claude plugin update` でキャッシュが更新されない。
+
 ## 参照
 
 - [Plugins Guide](https://docs.anthropic.com/en/docs/claude-code/plugins) - プラグイン開発の概要
