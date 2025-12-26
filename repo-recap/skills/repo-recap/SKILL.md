@@ -24,7 +24,7 @@ basename $(git rev-parse --show-toplevel)
 
 # コマンド4: コントリビューター名寄せマップ (GitHub API から取得)
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
-gh api "repos/${REPO}/commits" --paginate --jq '.[] | "\(.commit.author.name)|\(.author.login // "unknown")"' 2>/dev/null | sort -u
+noglob gh api "repos/${REPO}/commits" --paginate --jq '.[] | .commit.author.name + "|" + (.author.login // "unknown")' 2>/dev/null | sort -u
 ```
 
 コマンド4の出力から名寄せマップを作成:
