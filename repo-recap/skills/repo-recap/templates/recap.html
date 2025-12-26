@@ -424,6 +424,23 @@
     const prs = {{PRS_JSON}};
     const issues = {{ISSUES_JSON}};
 
+    // Contributor name aliases: {gitAuthorName: githubUsername, ...}
+    const contributorAliases = {{CONTRIBUTOR_ALIASES_JSON}};
+
+    // ========================================
+    // NAME NORMALIZATION
+    // ========================================
+    // Normalize contributor names using aliases (git author name → GitHub username)
+    function normalizeContributorName(name) {
+      return contributorAliases[name] || name;
+    }
+
+    // Apply normalization to all commits
+    rawCommits.forEach(c => {
+      c.originalName = c.name;
+      c.name = normalizeContributorName(c.name);
+    });
+
     // ========================================
     // COMPUTED DATA (auto-calculated from rawCommits)
     // ========================================
