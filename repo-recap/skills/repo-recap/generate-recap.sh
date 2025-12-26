@@ -21,11 +21,13 @@ YEAR=$(jq -r '.year' "$DATA_FILE")
 TMP_RAW=$(mktemp)
 TMP_PRS=$(mktemp)
 TMP_ISSUES=$(mktemp)
-trap "rm -f $TMP_RAW $TMP_PRS $TMP_ISSUES" EXIT
+TMP_ALIASES=$(mktemp)
+trap "rm -f $TMP_RAW $TMP_PRS $TMP_ISSUES $TMP_ALIASES" EXIT
 
 jq -c '.rawCommits' "$DATA_FILE" > "$TMP_RAW"
 jq -c '.prs' "$DATA_FILE" > "$TMP_PRS"
 jq -c '.issues' "$DATA_FILE" > "$TMP_ISSUES"
+jq -c '.contributorAliases // {}' "$DATA_FILE" > "$TMP_ALIASES"
 
 # Use perl with file slurping for safe replacement
 perl -e '
@@ -37,6 +39,7 @@ perl -e '
   my $raw_file = shift;
   my $prs_file = shift;
   my $issues_file = shift;
+  my $aliases_file = shift;
   my $template = shift;
 
   # Read JSON files
@@ -49,6 +52,9 @@ perl -e '
   open $fh, "<", $issues_file or die $!;
   my $issues = do { local $/; <$fh> }; close $fh; chomp $issues;
 
+  open $fh, "<", $aliases_file or die $!;
+  my $aliases = do { local $/; <$fh> }; close $fh; chomp $aliases;
+
   # Read template
   open $fh, "<", $template or die $!;
   my $html = do { local $/; <$fh> }; close $fh;
@@ -59,6 +65,7 @@ perl -e '
   $html =~ s/\{\{RAW_COMMITS_JSON\}\}/$raw/g;
   $html =~ s/\{\{PRS_JSON\}\}/$prs/g;
   $html =~ s/\{\{ISSUES_JSON\}\}/$issues/g;
+  $html =~ s/\{\{CONTRIBUTOR_ALIASES_JSON\}\}/$aliases/g;
 
   print $html;
-' "$REPO_NAME" "$YEAR" "$TMP_RAW" "$TMP_PRS" "$TMP_ISSUES" "$TEMPLATE"
+' "$REPO_NAME" "$YEAR" "$TMP_RAW" "$TMP_PRS" "$TMP_ISSUES" "$TMP_ALIASES" "$TEMPLATE"

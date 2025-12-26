@@ -9,7 +9,7 @@ description: Generate a 2025 year-in-review visualization for a repository. Use 
 
 ## Step 1: データ収集 (並列実行)
 
-以下の3コマンドを**並列で**実行:
+以下の4コマンドを**並列で**実行:
 
 ```bash
 # コマンド1: コミットデータ
@@ -21,7 +21,20 @@ gh issue list --state all --search "created:2025-01-01..2025-12-31" --json numbe
 
 # コマンド3: リポジトリ名
 basename $(git rev-parse --show-toplevel)
+
+# コマンド4: コントリビューター名寄せマップ (GitHub API から取得)
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+gh api "repos/${REPO}/commits" --paginate --jq '.[] | "\(.commit.author.name)|\(.author.login // "unknown")"' 2>/dev/null | sort -u
 ```
+
+コマンド4の出力から名寄せマップを作成:
+```
+# 出力例:
+# Hiroki Nakashima|him0
+# him0|him0
+# Claude|claude
+```
+→ `{"Hiroki Nakashima": "him0", "him0": "him0", "Claude": "claude"}` に変換
 
 ## Step 2: データをJSONに変換
 
@@ -42,7 +55,8 @@ cat > /tmp/recap-data.json << 'JSONEOF'
   "year": "2025",
   "rawCommits": [RAW_COMMITS_ARRAY],
   "prs": [PRS_ARRAY],
-  "issues": [ISSUES_ARRAY]
+  "issues": [ISSUES_ARRAY],
+  "contributorAliases": {"git author name": "github username", ...}
 }
 JSONEOF
 
@@ -66,3 +80,4 @@ open repo-recap-2025.html   # macOS
 - テンプレートの読み書きはシェルスクリプトが行うため高速
 - GitHub avatarsは `https://github.com/{username}.png` から取得
 - 全データはHTML内に埋め込み、オフラインで動作
+- **名寄せ機能**: `contributorAliases` で git author name → GitHub username のマッピングを指定すると、同一人物の異なる名前表記を統合して集計
