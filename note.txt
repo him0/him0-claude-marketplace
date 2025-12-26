@@ -1,0 +1,3 @@
+プログラマーの名言：「動くコードに触るな」と言った人が、翌日バグを見つけて泣いた。
+
+Original: "If it works, don't touch it," said the programmer who found a bug the next day and cried.
