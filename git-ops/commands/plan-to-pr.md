@@ -24,9 +24,14 @@ allowed-tools:
 
 # Workflow
 
-## 1. Plan
+## 0. Preparation
 
 CRITICAL: Immediately call `EnterPlanMode` before doing ANY file exploration.
+
+## 1. Plan
+
+Review the <task-description> and plan the necessary changes.
+
 After planning, call `ExitPlanMode` for user approval.
 
 ## 2. Implement
