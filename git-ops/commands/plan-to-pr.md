@@ -1,5 +1,5 @@
 ---
-description: "Plan を立案・実行し、PR を作成する"
+description: "Create a plan, execute it, and create a PR"
 argument-hint: [--draft | -d] [<task-description>]
 allowed-tools:
   - EnterPlanMode
@@ -24,44 +24,44 @@ allowed-tools:
 
 # Workflow
 
-## 1. 事前確認
+## 1. Pre-check
 
-`git status` でブランチがクリーンな状態（未コミットの変更がない）ことを確認する。
-変更がある場合は、先にコミットまたはスタッシュするようユーザーに促す。
+Verify that the branch is in a clean state (no uncommitted changes) using `git status`.
+If there are uncommitted changes, prompt the user to commit or stash them first.
 
-## 2. タスク受け取り
+## 2. Receive Task
 
-引数 `<task-description>` から実装するタスクの説明を取得する。
+Get the task description from the `<task-description>` argument.
 
-## 3. Plan Mode に入る
+## 3. Enter Plan Mode
 
-`EnterPlanMode` ツールを使用して Plan mode に入る。
+Use the `EnterPlanMode` tool to enter Plan mode.
 
-Plan mode では:
-1. コードベースを探索して関連するファイルを特定
-2. 変更が必要なファイルをリストアップ
-3. 実装手順を詳細に計画
-4. プランファイル (`~/.claude/plans/`) に計画を記述
+In Plan mode:
+1. Explore the codebase to identify related files
+2. List files that need to be modified
+3. Plan the implementation steps in detail
+4. Write the plan to a plan file (`~/.claude/plans/`)
 
-## 4. プラン確認・承認
+## 4. Plan Review and Approval
 
-プランが完成したら `ExitPlanMode` を呼び出してユーザーの承認を求める。
-ユーザーが承認するまで実装には進まない。
+Once the plan is complete, call `ExitPlanMode` to request user approval.
+Do not proceed with implementation until the user approves.
 
-## 5. 実装実行
+## 5. Execute Implementation
 
-承認後、プランに基づいてコード変更を実行する:
+After approval, execute code changes based on the plan:
 
-- 必要なファイルの作成・編集
-- テストの追加・更新（必要な場合）
-- 関連するドキュメントの更新（必要な場合）
+- Create/edit necessary files
+- Add/update tests (if needed)
+- Update related documentation (if needed)
 
-## 6. 変更確認
+## 6. Verify Changes
 
-実装完了後、変更内容をユーザーに提示して確認を取る。
-`git diff` で変更箇所を表示し、問題がないか確認する。
+After implementation is complete, present the changes to the user for verification.
+Display the changes using `git diff` and confirm there are no issues.
 
-## 7. PR 作成
+## 7. Create PR
 
-確認後、`/him0-git-ops:pull-request` を呼び出して PR を作成する。
-`--draft` オプションが指定されている場合は、そのまま引き継ぐ。
+After verification, call `/him0-git-ops:pull-request` to create the PR.
+If the `--draft` option was specified, pass it along.
