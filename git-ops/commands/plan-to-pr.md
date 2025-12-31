@@ -56,12 +56,30 @@ After approval, execute code changes based on the plan:
 - Add/update tests (if needed)
 - Update related documentation (if needed)
 
-## 6. Verify Changes
+## 6. Verify and Create PR
 
-After implementation is complete, present the changes to the user for verification.
-Display the changes using `git diff` and confirm there are no issues.
+After implementation is complete:
 
-## 7. Create PR
+1. Use `git diff` to review the changes internally
+2. If there are no issues, proceed to create the PR
+3. Call `/him0-git-ops:pull-request` to create the PR
+   - If the `--draft` option was specified, pass it along
 
-After verification, call `/him0-git-ops:pull-request` to create the PR.
-If the `--draft` option was specified, pass it along.
+## 7. Report and Confirm
+
+After the PR is created:
+
+1. Report to the user:
+   - Summary of what was implemented
+   - List of modified files
+   - PR link
+2. Ask the user if there are any additional implementations needed
+
+## 8. Additional Implementation (if needed)
+
+If the user requests additional changes:
+
+1. Implement the requested changes
+2. Update the PR by calling `/him0-git-ops:pull-request` again
+3. Report the updates and ask if there are more changes needed
+4. Repeat until the user is satisfied
