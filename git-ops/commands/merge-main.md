@@ -33,8 +33,8 @@ allowed-tools:
 
 # Workflow
 
-1. **Pre-check**: Ensure working tree is clean and not on default branch
-2. **Fetch and merge**: `git fetch` then `git merge` (or `git rebase` with `-r`)
-3. **Conflict resolution**: Auto-resolve conflicts unless `--no-auto-resolve`
+1. Pre-check: Ensure working tree is clean and not on default branch
+2. Fetch and merge: `git fetch` then `git merge` (or `git rebase` with `-r`)
+3. Conflict resolution: Auto-resolve conflicts unless `--no-auto-resolve`
    - If auto-resolution fails, ask user for guidance
-4. **Report**: Summary of merged commits and resolved conflicts
+4. Report: Summary of merged commits and resolved conflicts
