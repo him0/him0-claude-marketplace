@@ -63,6 +63,10 @@ plugin-name/
 
 バージョンを上げないと `claude plugin update` でキャッシュが更新されない。
 
+## スタイルガイド
+
+- Markdown で `**` による強調は使わない
+
 ## 参照
 
 - [Plugins Guide](https://docs.anthropic.com/en/docs/claude-code/plugins) - プラグイン開発の概要
