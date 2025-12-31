@@ -1,6 +1,6 @@
 ---
 description: "Create a plan, execute it, and create a PR"
-argument-hint: [--draft | -d] [<task-description>]
+argument-hint: "[--draft | -d] [<task-description>]"
 allowed-tools:
   - EnterPlanMode
   - ExitPlanMode
