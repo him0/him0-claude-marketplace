@@ -30,7 +30,14 @@ Verify clean branch state with `git status`. If uncommitted changes exist, promp
 
 ## 2. Plan
 
-Use `EnterPlanMode` to explore codebase, identify files to modify, and write plan to `~/.claude/plans/`.
+CRITICAL: Immediately call `EnterPlanMode` before doing ANY file exploration or investigation.
+
+Once in Plan mode:
+1. Explore the codebase to identify related files
+2. List files that need to be modified
+3. Plan the implementation steps in detail
+4. Write the plan to `~/.claude/plans/`
+
 Call `ExitPlanMode` for user approval before proceeding.
 
 ## 3. Implement
