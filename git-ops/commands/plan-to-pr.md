@@ -35,9 +35,12 @@ Get the task description from the `<task-description>` argument.
 
 ## 3. Enter Plan Mode
 
-Use the `EnterPlanMode` tool to enter Plan mode.
+CRITICAL: Immediately call the `EnterPlanMode` tool before doing ANY file exploration or investigation.
 
-In Plan mode:
+Do NOT explore the codebase, read files, or search for related code before entering plan mode.
+All exploration and investigation will happen inside plan mode.
+
+Once in Plan mode, you will:
 1. Explore the codebase to identify related files
 2. List files that need to be modified
 3. Plan the implementation steps in detail
