@@ -1,6 +1,6 @@
 ---
 description: "Create a plan, execute it, and create a PR"
-argument-hint: [--draft | -d] [<task-description>]
+argument-hint: "[--draft | -d] [<task-description>]"
 allowed-tools:
   - EnterPlanMode
   - ExitPlanMode
@@ -24,47 +24,20 @@ allowed-tools:
 
 # Workflow
 
-## 1. Pre-check
+## 1. Plan
 
-Verify that the branch is in a clean state (no uncommitted changes) using `git status`.
-If there are uncommitted changes, prompt the user to commit or stash them first.
+CRITICAL: Immediately call `EnterPlanMode` before doing ANY file exploration.
+After planning, call `ExitPlanMode` for user approval.
 
-## 2. Receive Task
+## 2. Implement
 
-Get the task description from the `<task-description>` argument.
+Verify clean branch with `git status`, then execute code changes based on the approved plan.
 
-## 3. Enter Plan Mode
+## 3. Create PR
 
-CRITICAL: Immediately call the `EnterPlanMode` tool before doing ANY file exploration or investigation.
+Review changes with `git diff`, then call `/him0-git-ops:pull-request` (pass `--draft` if specified).
 
-Do NOT explore the codebase, read files, or search for related code before entering plan mode.
-All exploration and investigation will happen inside plan mode.
+## 4. Report and Iterate
 
-Once in Plan mode, you will:
-1. Explore the codebase to identify related files
-2. List files that need to be modified
-3. Plan the implementation steps in detail
-4. Write the plan to a plan file (`~/.claude/plans/`)
-
-## 4. Plan Review and Approval
-
-Once the plan is complete, call `ExitPlanMode` to request user approval.
-Do not proceed with implementation until the user approves.
-
-## 5. Execute Implementation
-
-After approval, execute code changes based on the plan:
-
-- Create/edit necessary files
-- Add/update tests (if needed)
-- Update related documentation (if needed)
-
-## 6. Verify Changes
-
-After implementation is complete, present the changes to the user for verification.
-Display the changes using `git diff` and confirm there are no issues.
-
-## 7. Create PR
-
-After verification, call `/him0-git-ops:pull-request` to create the PR.
-If the `--draft` option was specified, pass it along.
+Report to user: implementation summary, modified files, PR link.
+If additional changes requested, implement and call `/him0-git-ops:pull-request` again. Repeat until satisfied.
