@@ -4,6 +4,5 @@
   "description": "Automatically ensures files end with a newline after Write, Edit, or MultiEdit operations",
   "author": {
     "name": "him0"
-  },
-  "hooks": ".hooks/"
+  }
 }
