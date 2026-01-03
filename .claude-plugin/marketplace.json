@@ -41,6 +41,11 @@
       "name": "him0-repo-recap",
       "source": "./repo-recap",
       "description": "Generate a beautiful 2025 year-in-review visualization for your repository"
+    },
+    {
+      "name": "him0-ensure-final-newline",
+      "source": "./ensure-final-newline",
+      "description": "Automatically ensures files end with a newline after Write, Edit, or MultiEdit operations"
     }
   ]
 }

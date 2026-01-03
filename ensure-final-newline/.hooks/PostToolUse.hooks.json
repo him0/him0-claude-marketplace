@@ -1,0 +1,13 @@
+{
+  "hooks": [
+    {
+      "matcher": "Write|Edit|MultiEdit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "jq -r '.tool_input.file_path' | xargs -I {} sh -c 'if [ -f \"{}\" ]; then sed -i \"\" -e \"$a\\\\\" \"{}\"; fi'"
+        }
+      ]
+    }
+  ]
+}

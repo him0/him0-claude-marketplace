@@ -1,0 +1,9 @@
+{
+  "name": "him0-ensure-final-newline",
+  "version": "1.0.0",
+  "description": "Automatically ensures files end with a newline after Write, Edit, or MultiEdit operations",
+  "author": {
+    "name": "him0"
+  },
+  "hooks": ".hooks/"
+}
