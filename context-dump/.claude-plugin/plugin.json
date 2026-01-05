@@ -1,0 +1,8 @@
+{
+  "name": "him0-context-dump",
+  "version": "1.0.0",
+  "description": "Dumps /context command output to JSON files",
+  "author": {
+    "name": "him0"
+  }
+}
