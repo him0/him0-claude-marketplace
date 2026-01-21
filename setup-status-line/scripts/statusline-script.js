@@ -38,7 +38,7 @@ function generateStatusLine(data) {
   const dir = dirFull.replace(home, "~");
 
   // 時間（APIから）
-  const durationMs = data.cost?.total_duration_ms || 0;
+  const durationMs = data.cost?.total_duration_ms ?? 0;
   const minutes = Math.floor(durationMs / 60000);
   const seconds = Math.floor((durationMs % 60000) / 1000);
   const duration = `${String(minutes).padStart(2, "0")}:${String(
@@ -96,10 +96,10 @@ function generateStatusLine(data) {
 
   // Context（used_percentage を直接使用）
   let context = "";
-  if (data.context_window && data.context_window.used_percentage !== undefined) {
+  if (data.context_window && data.context_window.used_percentage != null) {
     const percentage = data.context_window.used_percentage;
-    const totalInput = data.context_window.total_input_tokens || 0;
-    const windowSize = data.context_window.context_window_size || 200000;
+    const totalInput = data.context_window.total_input_tokens ?? 0;
+    const windowSize = data.context_window.context_window_size ?? 200000;
     context = `Context: ${formatNumber(totalInput)}/${formatNumber(
       windowSize
     )} (${percentage}%)`;
