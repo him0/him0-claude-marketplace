@@ -94,27 +94,13 @@ function generateStatusLine(data) {
     // Not a git repo
   }
 
-  // Context（Claude Code JSON から直接計算）
+  // Context（used_percentage を直接使用）
   let context = "";
-  if (data.context_window && data.context_window.current_usage) {
-    const usage = data.context_window.current_usage;
+  if (data.context_window && data.context_window.used_percentage !== undefined) {
+    const percentage = data.context_window.used_percentage;
+    const totalInput = data.context_window.total_input_tokens || 0;
     const windowSize = data.context_window.context_window_size || 200000;
-
-    // Autocompact buffer is fixed at 45k tokens
-    const AUTOCOMPACT_BUFFER = 45000;
-
-    // Current context = input + cache_creation + cache_read (excluding output)
-    const currentContext =
-      (usage.input_tokens || 0) +
-      (usage.cache_creation_input_tokens || 0) +
-      (usage.cache_read_input_tokens || 0);
-
-    // Total usage includes autocompact buffer
-    const totalUsage = currentContext + AUTOCOMPACT_BUFFER;
-
-    // Calculate percentage based on total window size (including autocompact buffer)
-    const percentage = Math.round((totalUsage / windowSize) * 100);
-    context = `Context: ${formatNumber(totalUsage)}/${formatNumber(
+    context = `Context: ${formatNumber(totalInput)}/${formatNumber(
       windowSize
     )} (${percentage}%)`;
   }
