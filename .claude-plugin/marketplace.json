@@ -15,7 +15,7 @@
     {
       "name": "him0-codex",
       "source": "./codex",
-      "description": "Web search plugin using codex CLI"
+      "description": "Delegate tasks to OpenAI Codex CLI agent"
     },
     {
       "name": "him0-gemini",

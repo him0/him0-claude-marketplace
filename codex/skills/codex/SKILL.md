@@ -15,5 +15,5 @@ agent: general-purpose
 Always run codex in read-only sandbox (`-s read-only`) to prevent unintended file writes.
 
 ```bash
-codex exec --color never -s read-only "<prompt>"
+codex exec --color never -s read-only '<prompt>'
 ```
