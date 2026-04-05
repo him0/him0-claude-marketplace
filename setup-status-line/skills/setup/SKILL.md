@@ -16,7 +16,7 @@ bun がある場合:
 ```json
 "statusLine": {
   "type": "command",
-  "command": "bunx claude-code-statusline"
+  "command": "bunx him0/claude-code-statusline"
 }
 ```
 
@@ -24,7 +24,7 @@ bun がない場合:
 ```json
 "statusLine": {
   "type": "command",
-  "command": "npx -y claude-code-statusline"
+  "command": "npx -y him0/claude-code-statusline"
 }
 ```
 
