@@ -2,18 +2,7 @@
 name: "pull-request"
 description: "Create a Pull Request. If one has already been created, push the commit and update the PR title and description based on the latest changes."
 argument-hint: [--draft | -d] [--stack] [<Ticket-URL>]
-allowed-tools:
-  - TodoWrite
-  - "Bash(gh *)"
-  - "Bash(git switch *)"
-  - "Bash(git add *)"
-  - "Bash(git commit *)"
-  - "Bash(git push *)"
-  - "Bash(git rev-parse *)"
-  - "Bash(git log *)"
-  - "Bash(git diff *)"
-  - "Bash(gh pr *)"
-  - "Skill(him0-git-ops:commit)"
+allowed-tools: TodoWrite Bash(gh *) Bash(git switch *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(git rev-parse *) Bash(git log *) Bash(git diff *) Bash(gh pr *) Skill(him0-git-ops:commit)
 ---
 
 # Quick Reference

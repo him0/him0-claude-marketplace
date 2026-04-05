@@ -2,16 +2,7 @@
 name: "yolo"
 description: "プランニングをスキップし、即座に実装して PR を作成する"
 argument-hint: "[--draft | -d] <task-description>"
-allowed-tools:
-  - TodoWrite
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - "Bash(git *)"
-  - "Skill(him0-git-ops:pull-request)"
-  - "Skill(him0-git-ops:auto-fix)"
+allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Skill(him0-git-ops:pull-request) Skill(him0-git-ops:auto-fix)
 ---
 
 # Quick Reference

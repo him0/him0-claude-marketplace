@@ -2,17 +2,7 @@
 name: "auto-fix"
 description: "CI ステータスと PR レビューコメントを確認し、問題を自動修正してコミット＆プッシュする"
 argument-hint: "[--watch | -w] [--ci-only] [--reviews-only]"
-allowed-tools:
-  - TodoWrite
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - "Bash(git *)"
-  - "Bash(gh *)"
-  - "Skill(him0-git-ops:commit)"
-  - "Skill(loop)"
+allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Bash(gh *) Skill(him0-git-ops:commit) Skill(loop)
 ---
 
 # Quick Reference

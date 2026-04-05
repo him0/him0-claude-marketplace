@@ -2,26 +2,7 @@
 name: "merge-main"
 description: "Fetch and merge the default branch into current branch with auto conflict resolution"
 argument-hint: "[--rebase | -r] [--no-auto-resolve]"
-allowed-tools:
-  - TodoWrite
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - AskUserQuestion
-  - "Bash(gh repo view *)"
-  - "Bash(git fetch *)"
-  - "Bash(git merge *)"
-  - "Bash(git rebase *)"
-  - "Bash(git status *)"
-  - "Bash(git diff *)"
-  - "Bash(git log *)"
-  - "Bash(git rev-parse *)"
-  - "Bash(git branch *)"
-  - "Bash(git checkout *)"
-  - "Bash(git add *)"
-  - "Bash(git reset *)"
+allowed-tools: TodoWrite Read Write Edit Grep Glob AskUserQuestion Bash(gh repo view *) Bash(git fetch *) Bash(git merge *) Bash(git rebase *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(git branch *) Bash(git checkout *) Bash(git add *) Bash(git reset *)
 ---
 
 # Quick Reference
