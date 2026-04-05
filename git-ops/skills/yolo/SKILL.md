@@ -1,6 +1,6 @@
 ---
 name: "yolo"
-description: "Skip planning, implement directly, and create a PR immediately"
+description: "プランニングをスキップし、即座に実装して PR を作成する"
 argument-hint: "[--draft | -d] <task-description>"
 allowed-tools:
   - TodoWrite
@@ -11,6 +11,7 @@ allowed-tools:
   - Grep
   - "Bash(git *)"
   - "Skill(him0-git-ops:pull-request)"
+  - "Skill(him0-git-ops:auto-fix)"
 ---
 
 # Quick Reference
@@ -22,16 +23,16 @@ allowed-tools:
 
 # Workflow
 
-## 1. Implement
+## 1. 実装
 
-Verify clean branch with `git status`, then directly implement the <task-description> without planning phase.
+`git status` でクリーンなブランチであることを確認し、<task-description> をプランニングなしで直接実装する。
 
-Use `TodoWrite` to track implementation progress for complex tasks.
+複雑なタスクの場合は `TodoWrite` で進捗を管理する。
 
-## 2. Create PR
+## 2. PR 作成
 
-Review changes with `git diff`, then call `/him0-git-ops:pull-request` (pass `--draft` if specified).
+`git diff` で変更を確認し、`/him0-git-ops:pull-request` を呼び出す（`--draft` 指定時はそのまま渡す）。
 
-## 3. Iterate
+## 3. CI とレビューの自動修正
 
-If additional changes requested, implement and call `/him0-git-ops:pull-request` again. Repeat until satisfied.
+PR 作成後、`/him0-git-ops:auto-fix --watch` を呼び出して CI 失敗とレビューコメントの継続監視・自動修正モードに入る。

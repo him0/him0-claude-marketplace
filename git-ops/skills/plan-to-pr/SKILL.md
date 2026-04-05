@@ -1,6 +1,6 @@
 ---
 name: "plan-to-pr"
-description: "Create a plan, execute it, and create a PR"
+description: "プランを作成し、実装して PR を作成する"
 argument-hint: "[--draft | -d] [<task-description>]"
 allowed-tools:
   - EnterPlanMode
@@ -14,6 +14,7 @@ allowed-tools:
   - Grep
   - "Bash(git *)"
   - "Skill(him0-git-ops:pull-request)"
+  - "Skill(him0-git-ops:auto-fix)"
 ---
 
 # Quick Reference
@@ -25,25 +26,24 @@ allowed-tools:
 
 # Workflow
 
-## 0. Preparation
+## 0. 準備
 
-CRITICAL: Immediately call `EnterPlanMode` before doing ANY file exploration.
+最重要: ファイル探索を行う前に、必ず `EnterPlanMode` を呼び出す。
 
-## 1. Plan
+## 1. プラン
 
-Review the <task-description> and plan the necessary changes.
+<task-description> を確認し、必要な変更をプランニングする。
 
-After planning, call `ExitPlanMode` for user approval.
+プラン完了後、`ExitPlanMode` を呼び出してユーザーの承認を得る。
 
-## 2. Implement
+## 2. 実装
 
-Verify clean branch with `git status`, then execute code changes based on the approved plan.
+`git status` でクリーンなブランチであることを確認し、承認されたプランに基づいてコードを変更する。
 
-## 3. Create PR
+## 3. PR 作成
 
-Review changes with `git diff`, then call `/him0-git-ops:pull-request` (pass `--draft` if specified).
+`git diff` で変更を確認し、`/him0-git-ops:pull-request` を呼び出す（`--draft` 指定時はそのまま渡す）。
 
-## 4. Report and Iterate
+## 4. CI とレビューの自動修正
 
-Report to user: implementation summary, modified files, PR link.
-If additional changes requested, implement and call `/him0-git-ops:pull-request` again. Repeat until satisfied.
+PR 作成後、`/him0-git-ops:auto-fix --watch` を呼び出して CI 失敗とレビューコメントの継続監視・自動修正モードに入る。
