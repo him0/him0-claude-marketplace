@@ -1,6 +1,6 @@
 ---
 description: "commit changes to git repository and push if needed"
-argument-hint: [--push | -p]
+argument-hint: [--push | -p] [--main | -m]
 allowed-tools:
   - TodoWrite
   - "Bash(gh *)"
@@ -17,7 +17,9 @@ allowed-tools:
 
 ```bash
 /commit
-/commit --push # Commit and push changes
+/commit --push  # Commit and push changes
+/commit --main  # Commit directly to the default branch without creating a new branch
+/commit -m -p   # Commit directly to the default branch and push
 ```
 
 # Workflow
@@ -28,7 +30,9 @@ Run these commands in parallel to gather information:
 - `git log --oneline -5`
 - `gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name'` (to get default branch)
 
-If the current branch is the default branch and there are differences, create a new branch.
+If `--main` or `-m` option is given, commit directly to the default branch without creating a new branch.
+
+Otherwise, if the current branch is the default branch and there are differences, create a new branch.
 Give the branch an appropriate name and commit the changes.
 
 If `--push` or `-p` option is given, push the branch to the remote repository.
