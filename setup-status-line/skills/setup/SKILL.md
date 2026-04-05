@@ -9,13 +9,22 @@ claude-code-statusline パッケージをグローバルインストールし、
 
 ## 手順
 
-1. `npm install -g claude-code-statusline` を実行
+1. `which bun` で bun の有無を確認
 2. `~/.claude/settings.json` に以下の設定を追加:
 
+bun がある場合:
 ```json
 "statusLine": {
   "type": "command",
-  "command": "claude-code-statusline"
+  "command": "bunx claude-code-statusline"
+}
+```
+
+bun がない場合:
+```json
+"statusLine": {
+  "type": "command",
+  "command": "npx -y claude-code-statusline"
 }
 ```
 
