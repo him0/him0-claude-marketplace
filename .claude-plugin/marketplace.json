@@ -28,7 +28,7 @@
       "description": "Character role-play skills - adds personality to Claude responses"
     },
     {
-      "name": "him0-setup-status-line",
+      "name": "him0-status-line",
       "source": "./setup-status-line",
       "description": "Setup status line script for Claude Code"
     },
