@@ -1,4 +1,5 @@
 ---
+name: "yolo"
 description: "Skip planning, implement directly, and create a PR immediately"
 argument-hint: "[--draft | -d] <task-description>"
 allowed-tools:
@@ -9,7 +10,7 @@ allowed-tools:
   - Glob
   - Grep
   - "Bash(git *)"
-  - "SlashCommand(/him0-git-ops:pull-request)"
+  - "Skill(him0-git-ops:pull-request)"
 ---
 
 # Quick Reference

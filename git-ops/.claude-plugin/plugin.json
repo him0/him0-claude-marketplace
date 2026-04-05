@@ -1,8 +1,9 @@
 {
   "name": "him0-git-ops",
-  "version": "1.0.7",
+  "version": "2.0.0",
   "description": "Git operations plugin for Claude Code",
   "author": {
     "name": "him0"
-  }
+  },
+  "skills": "./skills/"
 }

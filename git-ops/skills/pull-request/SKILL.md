@@ -1,4 +1,5 @@
 ---
+name: "pull-request"
 description: "Create a Pull Request. If one has already been created, push the commit and update the PR title and description based on the latest changes."
 argument-hint: [--draft | -d] [--stack] [<Ticket-URL>]
 allowed-tools:
@@ -12,7 +13,7 @@ allowed-tools:
   - "Bash(git log *)"
   - "Bash(git diff *)"
   - "Bash(gh pr *)"
-  - "SlashCommand(/him0-git-ops:commit)"
+  - "Skill(him0-git-ops:commit)"
 ---
 
 # Quick Reference

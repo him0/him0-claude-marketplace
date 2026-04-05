@@ -1,4 +1,5 @@
 ---
+name: "commit"
 description: "commit changes to git repository and push if needed"
 argument-hint: [--push | -p] [--main | -m]
 allowed-tools:

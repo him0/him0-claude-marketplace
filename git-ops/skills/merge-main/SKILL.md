@@ -1,4 +1,5 @@
 ---
+name: "merge-main"
 description: "Fetch and merge the default branch into current branch with auto conflict resolution"
 argument-hint: "[--rebase | -r] [--no-auto-resolve]"
 allowed-tools:
