@@ -1,4 +1,5 @@
 ---
+name: "search"
 allowed-tools: TodoWrite, "Bash(gemini --prompt *)"
 description: "search the web using gemini cli"
 argument-hint: [searchQuery]
