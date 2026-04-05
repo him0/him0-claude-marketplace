@@ -33,11 +33,6 @@
       "description": "Setup status line script for Claude Code"
     },
     {
-      "name": "him0-notification",
-      "source": "./notification",
-      "description": "Desktop notification plugin with tmux passthrough support for iTerm2"
-    },
-    {
       "name": "him0-repo-recap",
       "source": "./repo-recap",
       "description": "Generate a beautiful 2025 year-in-review visualization for your repository"
