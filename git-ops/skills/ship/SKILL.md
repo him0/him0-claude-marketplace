@@ -2,7 +2,7 @@
 name: "ship"
 description: "実装から PR 作成、CI/レビュー対応までを一気通貫で行う"
 argument-hint: "[--plan | -p] [--draft | -d] <task-description>"
-allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Skill(him0-git-ops:pull-request) Skill(him0-git-ops:auto-fix) EnterPlanMode
+allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Skill(him0-git-ops:pull-request) Skill(him0-git-ops:auto-fix) EnterPlanMode ExitPlanMode
 ---
 
 # Quick Reference

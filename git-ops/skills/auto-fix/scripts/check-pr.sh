@@ -24,7 +24,7 @@ done
 
 # PR 情報
 pr_json=$(gh pr view --json number,headRefName,state,url 2>/dev/null || echo "")
-if [ -z "$pr_json" ] || [ "$pr_json" = "" ]; then
+if [ -z "$pr_json" ]; then
   echo '{"error": "no_pr", "message": "No PR found for current branch"}'
   exit 0
 fi

@@ -13,7 +13,7 @@ CHECK_LINK="${1:?Usage: get-ci-logs.sh <check-link> [tail-lines]}"
 TAIL_LINES="${2:-100}"
 
 # URL から run ID を抽出
-run_id=$(echo "$CHECK_LINK" | grep -oE '[0-9]+$')
+run_id=$(echo "$CHECK_LINK" | grep -oE '/runs/([0-9]+)' | grep -oE '[0-9]+')
 
 if [ -z "$run_id" ]; then
   echo "ERROR: Could not extract run ID from: $CHECK_LINK"

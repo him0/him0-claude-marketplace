@@ -19,10 +19,11 @@ OWNER_REPO="${1:?Usage: watch-pr.sh <owner/repo> <pr-number> [interval_sec]}"
 PR_NUMBER="${2:?Usage: watch-pr.sh <owner/repo> <pr-number> [interval_sec]}"
 INTERVAL="${3:-60}"
 
-# 前回チェック時のコメント数を記録
-# 初回は 0 で開始し、既存コメントも新規として検出する
-prev_review_comments=0
-prev_pr_comments=0
+# 前回チェック時のコメント数を現在値で初期化 (既存コメントは起動前に処理済み)
+prev_review_comments=$(gh api "repos/${OWNER_REPO}/pulls/${PR_NUMBER}/comments" \
+  --jq '[.[] | select(.in_reply_to_id == null)] | length' 2>/dev/null || echo "0")
+prev_pr_comments=$(gh pr view "$PR_NUMBER" --repo "$OWNER_REPO" --json comments \
+  --jq '.comments | length' 2>/dev/null || echo "0")
 
 while true; do
   # PR の状態を確認 (マージ/クローズ検出)

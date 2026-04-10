@@ -48,14 +48,14 @@ bash <SKILL_DIR>/scripts/check-pr.sh [--ci-only] [--reviews-only]
 - `"PENDING"` → "CI 実行中" と報告して終了。Watch モードの場合は次のポーリングで再チェック
 - `"ACTION_NEEDED"` → ステップ 2, 3 へ進む
 
-## 2. CI 失敗の修正
+## 2. CI 失敗の修正 (`--reviews-only` の場合はスキップ)
 
 `ci.failed` 配列の各エントリに対して:
 1. `scripts/get-ci-logs.sh <link>` で失敗ログを取得
 2. 原因を特定: テスト失敗、lint エラー、型エラー、ビルドエラーなど
 3. 該当するソースファイルを読み取り、修正を適用
 
-## 3. レビューコメントの修正
+## 3. レビューコメントの修正 (`--ci-only` の場合はスキップ)
 
 `reviews.comments` と `reviews.changes_requested` の各エントリに対して:
 1. コメントの `path`, `line`, `body` から変更要求を把握
