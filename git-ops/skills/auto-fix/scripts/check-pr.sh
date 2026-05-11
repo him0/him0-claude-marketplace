@@ -4,7 +4,7 @@
 #
 # 出力 JSON 構造:
 # {
-#   "pr": { "number": 123, "branch": "feat/x", "state": "OPEN", "url": "...", "auto_merge_enabled": false },
+#   "pr": { "number": 123, "branch": "feat/x", "base": "main", "state": "OPEN", "url": "...", "auto_merge_enabled": false, "mergeable": "MERGEABLE|CONFLICTING|UNKNOWN" },
 #   "git_clean": true,
 #   "ci": {
 #     "failed":  [{ "name": "...", "state": "FAILURE", "link": "...", "provider": "github-actions|circleci|other" }, ...],
@@ -24,6 +24,9 @@
 #   }
 # }
 #
+# pr.mergeable は GitHub が非同期で算出する merge 可能性。UNKNOWN は計算待ちで
+# 一時的に返る (= ACTION_NEEDED にしない)。CONFLICTING は base branch との競合発生中。
+#
 # `claude_marker`: コメント本文の末尾が `<!-- claude-code:auto-fix -->` の場合 true。
 # Claude 自身の返信判定に使う。最終的なスレッド単位の対応済み判定はスキル本体で行う。
 
@@ -39,7 +42,7 @@ for arg in "$@"; do
 done
 
 # PR 情報
-pr_json=$(gh pr view --json number,headRefName,state,url,autoMergeRequest 2>/dev/null || echo "")
+pr_json=$(gh pr view --json number,headRefName,baseRefName,state,url,autoMergeRequest,mergeable 2>/dev/null || echo "")
 if [ -z "$pr_json" ]; then
   echo '{"error": "no_pr", "message": "No PR found for current branch", "summary": {"status": "error"}}'
   exit 0
@@ -48,14 +51,18 @@ fi
 pr_number=$(echo "$pr_json" | jq -r '.number')
 owner_repo=$(gh repo view --json nameWithOwner --jq '.nameWithOwner')
 
-# auto_merge_enabled を露出した形に整形
+# auto_merge_enabled / mergeable / base を露出した形に整形
 pr_json=$(echo "$pr_json" | jq '{
   number,
   branch: .headRefName,
+  base: .baseRefName,
   state,
   url,
-  auto_merge_enabled: (.autoMergeRequest != null)
+  auto_merge_enabled: (.autoMergeRequest != null),
+  mergeable: (.mergeable // "UNKNOWN")
 }')
+
+mergeable=$(echo "$pr_json" | jq -r '.mergeable')
 
 # git status
 if git diff --quiet && git diff --cached --quiet; then
@@ -121,7 +128,7 @@ n_pr_reviews=$(echo "$pr_reviews"   | jq '[.[] | select(.claude_marker | not) | 
 n_issue=$(echo "$issue_comments"    | jq '[.[] | select(.claude_marker | not)] | length')
 n_changes_requested=$(echo "$changes_requested" | jq 'length')
 
-if [ "$n_ci_failed" -gt 0 ] || [ "$n_inline" -gt 0 ] || [ "$n_pr_reviews" -gt 0 ] || [ "$n_issue" -gt 0 ] || [ "$n_changes_requested" -gt 0 ]; then
+if [ "$mergeable" = "CONFLICTING" ] || [ "$n_ci_failed" -gt 0 ] || [ "$n_inline" -gt 0 ] || [ "$n_pr_reviews" -gt 0 ] || [ "$n_issue" -gt 0 ] || [ "$n_changes_requested" -gt 0 ]; then
   status="ACTION_NEEDED"
 elif [ "$n_ci_pending" -gt 0 ]; then
   status="PENDING"

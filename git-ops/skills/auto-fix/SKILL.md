@@ -2,7 +2,7 @@
 name: "auto-fix"
 description: "CI ステータスと PR レビューコメントを確認し、問題を自動修正してコミット＆プッシュする"
 argument-hint: "[--watch | -w] [--ci-only] [--reviews-only]"
-allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Bash(gh *) Bash(*/scripts/*.sh *) Skill(him0-git-ops:commit) Skill(him0-git-ops:pull-request) Monitor TaskStop
+allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Bash(gh *) Bash(*/scripts/*.sh *) Skill(him0-git-ops:commit) Skill(him0-git-ops:pull-request) Skill(him0-git-ops:merge-base) Monitor TaskStop
 ---
 
 # Quick Reference
@@ -35,6 +35,7 @@ allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Bash(gh *) Bash(*
 Monitor からイベント通知を受けた場合:
 - `[CI_FAILED]` or `[GHA_FAILED]` → ステップ 1〜5 を実行して CI 失敗を修正
 - `[REVIEW_NEW]` → ステップ 1, 3〜5 を実行してレビューコメントを修正
+- `[CONFLICTING]` → ステップ 1, 2a, 5 を実行してコンフリクトを解消
 - `[ALL_PASSED]` → 対応不要、確認のみ
 - `[PENDING]` → 対応不要、待機継続
 - `[MERGED]` → 「PR がマージされました」と報告して監視終了
@@ -58,14 +59,31 @@ PR が見つからない (`summary.status` に `error`):
 `summary.status` で分岐:
 - `"ALL_CLEAR"` → 成功を報告して終了
 - `"PENDING"` → "CI 実行中" と報告して終了。Watch モードの場合は次のポーリングで再チェックされる
-- `"ACTION_NEEDED"` → ステップ 2, 3 へ進む
+- `"ACTION_NEEDED"` → 以下の順で対応:
+  - `pr.mergeable == "CONFLICTING"` ならまずステップ 2a でコンフリクトを解消
+  - 次にステップ 2 (CI) と 3 (レビュー) を進める
+
+`pr.mergeable == "UNKNOWN"` の場合は GitHub 側が計算中。アクションは取らず、Watch モードでは次のポーリングで再評価する。
 
 ### Auto-merge の一時解除
 
-修正が必要な場合 (CI 失敗または未対応コメントあり) かつ auto-merge が設定されている場合:
+修正が必要な場合 (コンフリクト・CI 失敗・未対応コメントのいずれか) かつ auto-merge が設定されている場合:
 - `gh pr merge --disable-auto` で auto-merge を一時解除する
 - 理由: 修正中に CI が通過すると意図せずマージされてしまうため
 - 修正完了後にステップ 4b (`/him0-git-ops:pull-request` が有効化を内包) またはステップ 4c (フォールバック) で再有効化する
+
+## 2a. コンフリクトの解消 (`pr.mergeable == "CONFLICTING"` の場合のみ)
+
+PR の base ブランチ (`pr.base`、main とは限らない) と PR ブランチでマージ競合が起きている。CI やレビュー対応より先に解消する (古いベースのまま CI を直しても無駄打ちになる)。
+
+手順:
+1. `/him0-git-ops:merge-base` を呼び出す (skill 内部で PR base を自動検出するので引数不要)
+2. 自動解消が成功し commit が作られた場合:
+   - merge-base が生成したマージコミットをそのまま `git push` する (`/him0-git-ops:commit --push` は呼ばない)
+   - その後ステップ 1 を再実行し、新しい `summary.status` で再分岐する (CI が再走するため通常 `PENDING` になる)
+3. 自動解消できない場合:
+   - 残コンフリクトのファイル一覧と差分の要約をユーザーに報告して停止する
+   - Watch モードでも `[CONFLICTING]` イベントに対しては再試行ループを組まず、ユーザー対応待ちにする
 
 ## 2. CI 失敗の修正 (`--reviews-only` の場合はスキップ)
 
@@ -181,6 +199,7 @@ watcher (`watch-pr.sh`) との役割分担:
 ## 5. 報告
 
 修正内容のサマリーを報告:
+- 解消したコンフリクト (merge-base で取り込んだ base ブランチ、コンフリクトしたファイル)
 - 対応した CI 失敗 (ジョブ名、エラー種別、修正内容)
 - 対応したレビューコメント (コメント内容の要約、修正内容)
 - 修正できなかった問題 (理由とともに報告)

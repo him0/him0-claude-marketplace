@@ -16,6 +16,7 @@
 #   [REVIEW_NEW]  @user commented on file:42: "..."
 #   [REVIEW_NEW]  @user submitted review: "..."
 #   [REVIEW_NEW]  @user commented on PR conversation: "..."
+#   [CONFLICTING] PR became mergeable=CONFLICTING (merge conflict with base branch)
 #   [ALL_PASSED]  All CI checks passed, no pending reviews
 #   [PENDING]     CI checks still running (N/M completed)
 #   [MERGED]      PR has been merged
@@ -58,11 +59,13 @@ INLINE_IDS_FILE="$STATE_DIR/inline_ids"
 PR_REVIEW_IDS_FILE="$STATE_DIR/pr_review_ids"
 ISSUE_IDS_FILE="$STATE_DIR/issue_ids"
 LAST_OVERALL_FILE="$STATE_DIR/last_overall"
+LAST_MERGEABLE_FILE="$STATE_DIR/last_mergeable"
 : >"$CHECKS_FILE"
 : >"$INLINE_IDS_FILE"
 : >"$PR_REVIEW_IDS_FILE"
 : >"$ISSUE_IDS_FILE"
 : >"$LAST_OVERALL_FILE"
+: >"$LAST_MERGEABLE_FILE"
 
 # --- helpers ---
 
@@ -136,8 +139,10 @@ poll_issue_comments() {
     --jq '.[] | [.id, .user.login, ((.body // "") | gsub("\n"; " ") | gsub("\t"; " "))] | @tsv' 2>/dev/null
 }
 
-poll_pr_state() {
-  gh pr view "$PR_NUMBER" --repo "$OWNER_REPO" --json state --jq .state 2>/dev/null
+# Emits "<state>\t<mergeable>" — state は OPEN/MERGED/CLOSED、mergeable は MERGEABLE/CONFLICTING/UNKNOWN
+poll_pr_meta() {
+  gh pr view "$PR_NUMBER" --repo "$OWNER_REPO" --json state,mergeable \
+    --jq '[.state, (.mergeable // "UNKNOWN")] | @tsv' 2>/dev/null
 }
 
 # --- overall status ---
@@ -196,18 +201,22 @@ seed_state() {
 
   compute_overall >"$LAST_OVERALL_FILE"
 
+  local pr_state mergeable_init
+  IFS=$'\t' read -r pr_state mergeable_init < <(poll_pr_meta)
+  printf '%s' "$mergeable_init" >"$LAST_MERGEABLE_FILE"
+
   local inline_n pr_n issue_n
   inline_n="$(awk 'END{print NR+0}' "$INLINE_IDS_FILE")"
   pr_n="$(awk 'END{print NR+0}' "$PR_REVIEW_IDS_FILE")"
   issue_n="$(awk 'END{print NR+0}' "$ISSUE_IDS_FILE")"
-  echo "Initial state: $(count_total) checks, $inline_n inline comments, $pr_n reviews, $issue_n conversation comments" >&2
+  echo "Initial state: $(count_total) checks, $inline_n inline comments, $pr_n reviews, $issue_n conversation comments, mergeable=$mergeable_init" >&2
 }
 
 # --- main poll cycle ---
 
 poll_and_emit() {
-  local pr_state
-  pr_state="$(poll_pr_state)"
+  local pr_state mergeable
+  IFS=$'\t' read -r pr_state mergeable < <(poll_pr_meta)
   if [ "$pr_state" = "MERGED" ]; then
     emit MERGED "PR #$PR_NUMBER has been merged"
     exit 0
@@ -218,6 +227,17 @@ poll_and_emit() {
   fi
 
   local has_new=false name state provider link id user path line body prev loc
+
+  # UNKNOWN は GitHub が再計算中なので無視 (= MERGEABLE/CONFLICTING への確定遷移のみ拾う)
+  local last_mergeable
+  last_mergeable="$(cat "$LAST_MERGEABLE_FILE")"
+  if [ -n "$mergeable" ] && [ "$mergeable" != "UNKNOWN" ] && [ "$mergeable" != "$last_mergeable" ]; then
+    if [ "$mergeable" = "CONFLICTING" ]; then
+      emit CONFLICTING "PR #$PR_NUMBER has merge conflicts with base branch"
+      has_new=true
+    fi
+    printf '%s' "$mergeable" >"$LAST_MERGEABLE_FILE"
+  fi
 
   while IFS=$'\t' read -r name state provider link; do
     [ -z "$name" ] && continue
