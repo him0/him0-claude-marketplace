@@ -30,7 +30,9 @@
 # 未対応判定 (watch-pr.sh と同じ基準):
 # - インラインレビュースレッド: isResolved == false かつ最後のコメントが
 #   auto-fix マーカー / 持続的メタコメントマーカーを含まないスレッドのみカウント
-# - PR レビュー本体 / 会話コメント: 本文にマーカーを含むものを除外してカウント
+# - PR レビュー本体 / 会話コメント: 本文にマーカーを含むものを除外してカウント。
+#   resolve の概念がないため、auto-fix の最後の返信 (マーカー付きコメント) より
+#   古いものは対応済みとみなす。空本文でも CHANGES_REQUESTED のレビューは数える
 #
 # `claude_marker`: 本文に `<!-- ClaudeCode:auto-fix -->` を含む場合 true (= auto-fix 自身の返信)。
 # `meta_marker`: 本文に persistent_meta_markers_json のいずれかを含む場合 true。
@@ -46,11 +48,13 @@ for arg in "$@"; do
   esac
 done
 
-# auto-fix の返信マーカー。文言を変更する場合は SKILL.md と watch-pr.sh も同時に更新すること。
-auto_fix_marker="<!-- ClaudeCode:auto-fix -->"
+if [ "$CI_ONLY" = true ] && [ "$REVIEWS_ONLY" = true ]; then
+  echo '{"error": "invalid_args", "message": "--ci-only and --reviews-only are mutually exclusive", "summary": {"status": "error"}}'
+  exit 0
+fi
 
-# bot / CI の持続的メタコメントマーカー (watch-pr.sh の同名変数と同期させる)
-persistent_meta_markers_json='["<!-- This is an auto-generated comment: summarize by coderabbit.ai -->"]'
+# マーカー定義 (auto_fix_marker / persistent_meta_markers_json) は共通定義から読み込む
+. "$(dirname "$0")/markers.sh"
 
 # PR 情報
 pr_json=$(gh pr view --json number,headRefName,baseRefName,state,url,autoMergeRequest,mergeable,mergeStateStatus 2>/dev/null || echo "")
@@ -172,12 +176,18 @@ if [ "$CI_ONLY" = false ]; then
 fi
 
 # サマリー計算 (auto-fix 自身の返信・メタコメントはカウントから除外)
+#
+# トップレベルコメント / レビュー本体には resolve の概念がないため、
+# 「auto-fix の最後の返信 (マーカー付きコメント) より古いものは対応済み」とみなす
+# ヒューリスティックで未対応を判定する (watch-pr.sh と同一基準)。
+last_af_ts=$(echo "$issue_comments" | jq -r '[.[] | select(.claude_marker) | .created_at] | max // ""')
+
 n_ci_failed=$(echo "$ci_failed" | jq 'length')
 n_ci_pending=$(echo "$ci_pending" | jq 'length')
 n_threads=$(echo "$unresolved_threads" | jq 'length')
-n_pr_reviews=$(echo "$pr_reviews"   | jq '[.[] | select((.claude_marker or .meta_marker) | not) | select((.body // "") != "" or .state == "CHANGES_REQUESTED")] | length')
-n_issue=$(echo "$issue_comments"    | jq '[.[] | select((.claude_marker or .meta_marker) | not)] | length')
-n_changes_requested=$(echo "$changes_requested" | jq 'length')
+n_pr_reviews=$(echo "$pr_reviews"   | jq --arg af_ts "$last_af_ts" '[.[] | select((.claude_marker or .meta_marker) | not) | select((.body // "") != "" or .state == "CHANGES_REQUESTED") | select((.submitted_at // "") > $af_ts)] | length')
+n_issue=$(echo "$issue_comments"    | jq --arg af_ts "$last_af_ts" '[.[] | select((.claude_marker or .meta_marker) | not) | select((.created_at // "") > $af_ts)] | length')
+n_changes_requested=$(echo "$changes_requested" | jq --arg af_ts "$last_af_ts" '[.[] | select((.claude_marker or .meta_marker) | not) | select((.submitted_at // "") > $af_ts)] | length')
 
 has_conflict=false
 if [ "$mergeable" = "CONFLICTING" ] || [ "$merge_state_status" = "DIRTY" ]; then

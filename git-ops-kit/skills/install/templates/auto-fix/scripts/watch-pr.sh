@@ -20,22 +20,18 @@
 set -uo pipefail
 
 interval="${1:-60}"
-prev=""
 error_streak=0
 
-# auto-fix の返信に付ける識別子（HTML コメントとして本文末尾に埋め込む）。
-# GitHub UI 上には表示されず、API レスポンスの body には含まれるため、
-# 返信済みコメントを判別する用途に使う。
-# マーカー文言を変更する場合は SKILL.md と check-pr.sh も同時に更新すること。
-auto_fix_marker="<!-- ClaudeCode:auto-fix -->"
+# 各サブ状態の前回値。個別に追跡し、変化したサブ状態のイベントだけを発火する
+# (複合 snapshot 方式だと、他のサブ状態の変化で未変化の CI 失敗などが再発火してしまう)
+prev_failed=""
+prev_review_ids=""
+prev_inline_ids=""
+prev_conflict=""
+prev_clean=""
 
-# bot / CI が PR に自動投稿する「持続的メタコメント」のマーカー一覧（JSON 配列）。
-# 人手レビューではなく auto-fix が対応するアクションも存在しないため、未対応カウントから除外する。
-# プロジェクト固有の bot コメント（例: issue トラッカーのリンクバック、CI の進捗通知）が
-# あれば、その本文に含まれる HTML コメントマーカーをここに追加する。
-# デフォルトは CodeRabbit のサマリーコメントのみ（指摘はインラインコメントとして別途届くため、
-# サマリー本体は対応アクションのないメタコメント）。
-persistent_meta_markers_json='["<!-- This is an auto-generated comment: summarize by coderabbit.ai -->"]'
+# マーカー定義 (auto_fix_marker / persistent_meta_markers_json) は共通定義から読み込む
+. "$(dirname "$0")/markers.sh"
 
 # リポジトリ名はセッション中に変わらないため、ループ前に 1 回だけ解決する。
 repo_full=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null || echo "")
@@ -74,7 +70,16 @@ while true; do
     OPEN) ;;
     MERGED) echo "MERGED"; exit 0 ;;
     CLOSED) echo "CLOSED"; exit 0 ;;
-    *) echo "ERROR:unknown PR state: ${state}"; exit 1 ;;
+    *)
+      # 一時的な API 異常で不明な state が返ることがあるため、他の障害と同じ 3 ストライク方式にする
+      error_streak=$((error_streak + 1))
+      echo "ERROR:unknown PR state: ${state:-<empty>} (streak=${error_streak})"
+      if [ "$error_streak" -ge 3 ]; then
+        exit 1
+      fi
+      sleep "$interval"
+      continue
+      ;;
   esac
 
   # base ブランチとの conflict 検知。
@@ -94,15 +99,34 @@ while true; do
   pending=$(echo "$checks" | jq -r '.[] | select(.state == "PENDING" or .state == "IN_PROGRESS" or .state == "QUEUED") | .name')
 
   # PR トップレベルコメント + レビュー本体
-  # auto-fix 自身が付けた返信 ($marker) と bot 持続的メタコメント ($metas のいずれかを含むもの) は除外
+  # 除外するもの:
+  # - auto-fix 自身が付けた返信 ($marker)
+  # - bot 持続的メタコメント ($metas のいずれかを含むもの)
+  # - auto-fix の最後の返信より古いもの (トップレベルコメント / レビュー本体には resolve の
+  #   概念がないため、「auto-fix が返信した時点までのものは対応済み」とみなすヒューリスティック)
+  # 空本文でも CHANGES_REQUESTED のレビューは未対応として数える (check-pr.sh と同一基準)
+  # 変化検知は件数ではなく ID 集合で行う (件数だと同一間隔内の「1件解消 + 1件新規」が相殺されて
+  # イベントを見逃すため)
   pr_comments_json=$(gh pr view --json comments,reviews 2>/dev/null || echo "{}")
-  reviews=$(echo "$pr_comments_json" | jq -r --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" '
+  review_ids=$(echo "$pr_comments_json" | jq -c --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" '
     def contains_any($needles): . as $body | any($needles[]?; . as $n | $body | contains($n));
-    [
-      ((.comments // [])[]?    | select(.isMinimized != true) | select((.body // "") | contains($marker) | not) | select((.body // "") | contains_any($metas) | not)),
-      ((.reviews // [])[]?     | select(((.body // "") | length) > 0) | select((.body // "") | contains($marker) | not) | select((.body // "") | contains_any($metas) | not))
-    ] | length
+    ([ (.comments // [])[]? | select((.body // "") | contains($marker)) | .createdAt ] | max // "") as $af_ts
+    | [
+        ((.comments // [])[]?
+          | select(.isMinimized != true)
+          | select((.body // "") | contains($marker) | not)
+          | select((.body // "") | contains_any($metas) | not)
+          | select((.createdAt // "") > $af_ts)
+          | .id),
+        ((.reviews // [])[]?
+          | select((.body // "") | contains($marker) | not)
+          | select((.body // "") | contains_any($metas) | not)
+          | select((((.body // "") | length) > 0) or .state == "CHANGES_REQUESTED")
+          | select((.submittedAt // "") > $af_ts)
+          | .id)
+      ] | sort
   ')
+  reviews=$(echo "$review_ids" | jq -r 'length')
 
   # インラインレビュースレッド（GraphQL）
   # - resolved されたスレッドは除外
@@ -114,6 +138,7 @@ while true; do
         pullRequest(number: $number) {
           reviewThreads(first: 100) {
             nodes {
+              id
               isResolved
               comments(last: 1) { nodes { body } }
             }
@@ -122,55 +147,60 @@ while true; do
       }
     }' -F owner="$owner" -F repo="$repo_name" -F number="$pr_number" 2>/dev/null \
     || echo '{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[]}}}}}')
-  inline_count=$(echo "$thread_json" | jq -r --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" '
+  inline_ids=$(echo "$thread_json" | jq -c --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" '
     def contains_any($needles): . as $body | any($needles[]?; . as $n | $body | contains($n));
     [
       .data.repository.pullRequest.reviewThreads.nodes[]?
         | select(.isResolved == false)
         | select(((.comments.nodes[0].body) // "") | contains($marker) | not)
         | select(((.comments.nodes[0].body) // "") | contains_any($metas) | not)
-    ] | length
+        | .id
+    ] | sort
   ')
+  inline_count=$(echo "$inline_ids" | jq -r 'length')
 
-  # クリーン状態（CI 全通過・pending なし・未対応コメントなし・conflict なし）を
-  # boolean フラグ化して snapshot に含める。
-  # pending を raw で snapshot に入れると PENDING → IN_PROGRESS → SUCCESS の遷移ごとに
-  # snapshot が変わり reviews / inline_count が同じでも NEW_REVIEW が再発火するが、
-  # clean は pending 中ずっと 0 のままなので途中遷移では変化せず、
-  # pending が空へ遷移した瞬間に 0→1 となり ALL_PASSED を 1 度だけ発火できる。
+  # クリーン状態（CI 全通過・pending なし・未対応コメントなし・conflict なし）。
+  # pending は clean の判定にのみ使う (PENDING → IN_PROGRESS → SUCCESS の途中遷移では
+  # clean は 0 のまま変化せず、pending が空へ遷移した瞬間に 0→1 となり ALL_PASSED を
+  # 1 度だけ発火できる)。
   if [ -z "$failed" ] && [ -z "$pending" ] && [ "$reviews" = "0" ] && [ "$inline_count" = "0" ] && [ "$merge_conflict" = "0" ]; then
     clean="1"
   else
     clean="0"
   fi
 
-  snapshot="${failed}::${reviews}::${inline_count}::${merge_conflict}::${clean}"
-  if [ "$snapshot" != "$prev" ]; then
-    if [ -n "$failed" ]; then
-      while IFS='|' read -r name link; do
-        [ -z "$name" ] && continue
-        run_id=$(echo "$link" | grep -oE '[0-9]+$' || echo "")
-        echo "CI_FAILED:${name},${run_id}"
-      done <<< "$failed"
-    fi
-    if [ "$reviews" != "0" ] && [ -n "$reviews" ]; then
-      echo "NEW_REVIEW:count=${reviews}"
-    fi
-    if [ "$inline_count" != "0" ] && [ -n "$inline_count" ]; then
-      echo "NEW_REVIEW_COMMENT:count=${inline_count}"
-    fi
-    if [ "$merge_conflict" = "1" ]; then
-      echo "MERGE_CONFLICT:${mergeable:-UNKNOWN},${merge_state_status:-UNKNOWN}"
-    fi
-    # ALL_PASSED は「今クリーンになった」ことを伝える非終了イベント。
-    # ここで exit せず監視を継続し、終了は MERGED / CLOSED（PR state）に一本化する。
-    # これにより approve 後・マージ前に発生する新規コメントや conflict も拾い続けられる。
-    # クリーン → 指摘発生 → 解消で再びクリーン、のたびに 1 度ずつ再発火する。
-    if [ "$clean" = "1" ]; then
-      echo "ALL_PASSED"
-    fi
-    prev="$snapshot"
+  # サブ状態ごとに前回値と比較し、変化したものだけイベントを発火する
+  if [ -n "$failed" ] && [ "$failed" != "$prev_failed" ]; then
+    while IFS='|' read -r name link; do
+      [ -z "$name" ] && continue
+      # run_id は /runs/ 直後の数字を抽出する (末尾の数字だと .../runs/<run>/job/<job> 形式で
+      # job_id を拾ってしまう。get-ci-logs.sh と同一ロジック)
+      run_id=$(echo "$link" | grep -oE '/runs/[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "")
+      echo "CI_FAILED:${name},${run_id}"
+    done <<< "$failed"
   fi
+  if [ "$reviews" != "0" ] && [ "$review_ids" != "$prev_review_ids" ]; then
+    echo "NEW_REVIEW:count=${reviews}"
+  fi
+  if [ "$inline_count" != "0" ] && [ "$inline_ids" != "$prev_inline_ids" ]; then
+    echo "NEW_REVIEW_COMMENT:count=${inline_count}"
+  fi
+  if [ "$merge_conflict" = "1" ] && [ "$prev_conflict" != "1" ]; then
+    echo "MERGE_CONFLICT:${mergeable:-UNKNOWN},${merge_state_status:-UNKNOWN}"
+  fi
+  # ALL_PASSED は「今クリーンになった」ことを伝える非終了イベント。
+  # ここで exit せず監視を継続し、終了は MERGED / CLOSED（PR state）に一本化する。
+  # これにより approve 後・マージ前に発生する新規コメントや conflict も拾い続けられる。
+  # クリーン → 指摘発生 → 解消で再びクリーン、のたびに 1 度ずつ再発火する。
+  if [ "$clean" = "1" ] && [ "$prev_clean" != "1" ]; then
+    echo "ALL_PASSED"
+  fi
+
+  prev_failed="$failed"
+  prev_review_ids="$review_ids"
+  prev_inline_ids="$inline_ids"
+  prev_conflict="$merge_conflict"
+  prev_clean="$clean"
 
   sleep "$interval"
 done
