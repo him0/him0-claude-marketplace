@@ -8,10 +8,10 @@ allowed-tools: TodoWrite Bash(gh *) Bash(git switch *) Bash(git add *) Bash(git 
 # Quick Reference
 
 ```bash
-/pull-request                    # PR を作成
-/pull-request --draft            # draft PR を作成する
-/pull-request --base feat/foo    # base ブランチを指定して PR を作成 (スタック PR)
-/pull-request <Ticket-URL>       # チケット URL を含めて PR 作成
+/pull-request                 # PR を作成
+/pull-request --draft         # draft PR を作成する
+/pull-request --base feat/foo # base ブランチを指定して PR を作成 (スタック PR)
+/pull-request <Ticket-URL>    # チケット URL を含めて PR 作成
 ```
 
 ## オプション

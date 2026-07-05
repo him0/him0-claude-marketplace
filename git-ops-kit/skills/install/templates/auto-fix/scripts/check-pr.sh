@@ -13,9 +13,9 @@
 #   },
 #   "reviews": {
 #     "unresolved_threads": [{ "thread_id", "path", "line", "comments": [{ "id", "user", "body", "claude_marker" }] }, ...],
-#     "pr_reviews":        [{ "id", "author", "state", "body", "submitted_at", "claude_marker", "meta_marker" }, ...],
-#     "issue_comments":    [{ "id", "user", "body", "created_at", "claude_marker", "meta_marker" }, ...],
-#     "changes_requested": [{ "author", "state", "body" }, ...]
+#     "pr_reviews":        [{ "id", "author", "state", "body", "submitted_at", "claude_marker", "meta_marker", "handled" }, ...],
+#     "issue_comments":    [{ "id", "user", "body", "created_at", "claude_marker", "meta_marker", "handled" }, ...],
+#     "changes_requested": [{ "author", "state", "body", ..., "handled" }, ...]
 #   },
 #   "summary": {
 #     "status": "ACTION_NEEDED|PENDING|ALL_CLEAR",
@@ -36,6 +36,8 @@
 #
 # `claude_marker`: 本文に `<!-- ClaudeCode:auto-fix -->` を含む場合 true (= auto-fix 自身の返信)。
 # `meta_marker`: 本文に persistent_meta_markers_json のいずれかを含む場合 true。
+# `handled`: auto-fix の最後の返信より古い (= 対応済みとみなす) 場合 true。
+#   summary の集計もスキル本体の処理対象選定も、この 3 フィールドで同じ条件を使う。
 
 set -euo pipefail
 
@@ -107,7 +109,7 @@ thread_json=$(gh api graphql -f query='
             isResolved
             path
             line
-            comments(first: 50) {
+            comments(last: 50) {
               nodes { databaseId body author { login } }
             }
           }
@@ -117,7 +119,9 @@ thread_json=$(gh api graphql -f query='
   }' -F owner="$owner" -F repo="$repo_name" -F number="$pr_number" 2>/dev/null \
   || echo '{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[]}}}}}')
 
-# 未解決スレッドのうち、最後のコメントが auto-fix / メタコメントでないもののみ
+# 未解決スレッドのうち、最後のコメントが auto-fix / メタコメントでないもののみ。
+# comments は last: 50 で取得しているため nodes[-1] は常に真の最終コメント
+# (watch-pr.sh の comments(last: 1) と同じ判定基準)
 unresolved_threads=$(echo "$thread_json" | jq --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" '
     def contains_any($needles): . as $body | any($needles[]?; . as $n | $body | contains($n));
   [
@@ -151,19 +155,26 @@ issue_comments=$(gh api --paginate "repos/${owner_repo}/issues/${pr_number}/comm
 # CHANGES_REQUESTED レビュー
 changes_requested=$(echo "$pr_reviews" | jq '[.[] | select(.state == "CHANGES_REQUESTED")]')
 
-# サマリー計算 (auto-fix 自身の返信・メタコメントはカウントから除外)
+# 対応済み判定 (auto-fix 自身の返信・メタコメントは除外)
 #
 # トップレベルコメント / レビュー本体には resolve の概念がないため、
 # 「auto-fix の最後の返信 (マーカー付きコメント) より古いものは対応済み」とみなす
 # ヒューリスティックで未対応を判定する (watch-pr.sh と同一基準)。
+# 判定結果は各要素の `handled` フィールドとして生配列にも付与する。summary の集計と
+# スキル本体が処理対象を選ぶ条件を同じフィールドに揃え、対応済みコメントへの
+# 重複返信を防ぐため。
 last_af_ts=$(echo "$issue_comments" | jq -r '[.[] | select(.claude_marker) | .created_at] | max // ""')
+
+pr_reviews=$(echo "$pr_reviews" | jq --arg af_ts "$last_af_ts" '[.[] | . + {handled: ((.submitted_at // "") <= $af_ts)}]')
+issue_comments=$(echo "$issue_comments" | jq --arg af_ts "$last_af_ts" '[.[] | . + {handled: ((.created_at // "") <= $af_ts)}]')
+changes_requested=$(echo "$changes_requested" | jq --arg af_ts "$last_af_ts" '[.[] | . + {handled: ((.submitted_at // "") <= $af_ts)}]')
 
 n_ci_failed=$(echo "$ci_failed" | jq 'length')
 n_ci_pending=$(echo "$ci_pending" | jq 'length')
 n_threads=$(echo "$unresolved_threads" | jq 'length')
-n_pr_reviews=$(echo "$pr_reviews"   | jq --arg af_ts "$last_af_ts" '[.[] | select((.claude_marker or .meta_marker) | not) | select((.body // "") != "" or .state == "CHANGES_REQUESTED") | select((.submitted_at // "") > $af_ts)] | length')
-n_issue=$(echo "$issue_comments"    | jq --arg af_ts "$last_af_ts" '[.[] | select((.claude_marker or .meta_marker) | not) | select((.created_at // "") > $af_ts)] | length')
-n_changes_requested=$(echo "$changes_requested" | jq --arg af_ts "$last_af_ts" '[.[] | select((.claude_marker or .meta_marker) | not) | select((.submitted_at // "") > $af_ts)] | length')
+n_pr_reviews=$(echo "$pr_reviews"   | jq '[.[] | select((.claude_marker or .meta_marker or .handled) | not) | select((.body // "") != "" or .state == "CHANGES_REQUESTED")] | length')
+n_issue=$(echo "$issue_comments"    | jq '[.[] | select((.claude_marker or .meta_marker or .handled) | not)] | length')
+n_changes_requested=$(echo "$changes_requested" | jq '[.[] | select((.claude_marker or .meta_marker or .handled) | not)] | length')
 
 has_conflict=false
 if [ "$mergeable" = "CONFLICTING" ] || [ "$merge_state_status" = "DIRTY" ]; then

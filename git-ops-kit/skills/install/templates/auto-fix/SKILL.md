@@ -8,8 +8,8 @@ allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Bash(gh *) Bash(b
 # Quick Reference
 
 ```bash
-/auto-fix                    # CI 失敗とレビューコメントを1回修正
-/auto-fix --watch            # Monitor で継続監視し、マージ / クローズまで自動対応
+/auto-fix         # CI 失敗とレビューコメントを1回修正
+/auto-fix --watch # Monitor で継続監視し、マージ / クローズまで自動対応
 ```
 
 # 共通ルール
@@ -155,7 +155,7 @@ Monitor 起動が成功したら、ユーザーに監視を開始した旨と「
 
 - インラインレビュースレッド: `isResolved == false` かつ「最後のコメントが auto-fix の HTML コメントマーカー / 持続的メタコメントマーカーを含まない」スレッドのみカウント。「修正/修正しない」で resolve 済 / 「追加質問」で人間応答待ち、いずれも未対応カウントから除外される
 - PR トップレベルコメント / レビュー本体: resolve の概念がないため、「本文にマーカーを含むもの」に加えて「auto-fix の最後の返信 (マーカー付きコメント) より古いもの」を対応済みとみなして除外する。auto-fix は対応サイクルの最後に必ずマーカー付きで返信するため、返信時点までのコメントは対応済みと判定できる。空本文でも `CHANGES_REQUESTED` のレビューは未対応として数える
-- 新規イベントの検知は件数ではなく ID 集合の変化で行う (同一ポーリング間隔内で「1 件解消 + 1 件新規」が起きても相殺されない)
+- 新規イベントの検知は件数ではなく ID 集合の差集合 (新規に増えた分) で行う。同一ポーリング間隔内で「1 件解消 + 1 件新規」が起きても相殺されず、解消のみ (resolve だけ) では発火しない。CI_FAILED も同様に、新規に失敗し始めたチェックだけを通知する
 
 スクリプトの終了条件:
 
@@ -244,7 +244,7 @@ CI 修正に着手する前に、`pr.auto_merge_enabled` が true なら `gh pr 
 対応対象は `check-pr.sh` の出力のうち:
 
 - `reviews.unresolved_threads`: 未解決のインラインレビュースレッド (auto-fix 応答済み・メタコメントは除外済み)
-- `reviews.pr_reviews` / `reviews.issue_comments` のうち `claude_marker` / `meta_marker` がともに false のもの
+- `reviews.pr_reviews` / `reviews.issue_comments` のうち `claude_marker` / `meta_marker` / `handled` がすべて false のもの (summary の集計と同一条件。`handled == true` は auto-fix の最後の返信より古い対応済みコメントなので、再度対応すると重複返信になる)
 
 `<!-- ClaudeCode:auto-fix -->` を含むコメントは auto-fix 自身の返信なので必ずスキップする。
 
@@ -339,6 +339,6 @@ push 後、3-3 の「修正」区分の返信に含めるコミット SHA を確
 - `.github/workflows/` は原則変更しない
 - flaky test (コード変更なしで失敗) → `gh run rerun <RUN_ID> --failed` を提案
 - インフラ起因の失敗 → 報告のみ
-- 同じエラーが 3 回以上続く (同一指摘の修正に繰り返し失敗して収束しない) → 手動介入を案内し、TaskStop で Monitor を停止
+- 同じエラーが 3 回以上続く (同一指摘の修正に繰り返し失敗して収束しない) → 手動介入を案内し、TaskStop で Monitor を停止。この計数はスクリプトではなくスキル実行側の判断に依存する設計上の制約があり、セッションを跨ぐとリセットされる。収束しない兆候を感じたら早めに手動介入を案内する側に倒す
 - auto-fix からは auto-merge を外すだけで、有効化はしない
 - 返信に必ず sub タグ + HTML コメントマーカーの 2 行を付け、auto-fix 自身の返信を再対応対象にしない

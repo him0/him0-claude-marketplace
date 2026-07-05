@@ -22,11 +22,12 @@ set -uo pipefail
 interval="${1:-60}"
 error_streak=0
 
-# 各サブ状態の前回値。個別に追跡し、変化したサブ状態のイベントだけを発火する
-# (複合 snapshot 方式だと、他のサブ状態の変化で未変化の CI 失敗などが再発火してしまう)
+# 各サブ状態の前回値。個別に追跡し、新規に増えた分 (差集合) だけイベントを発火する
+# (複合 snapshot 方式だと、他のサブ状態の変化で未変化の CI 失敗などが再発火してしまう。
+#  また集合の「変化」だけを見ると、解消のみ (resolve だけ) でも新着として誤発火する)
 prev_failed=""
-prev_review_ids=""
-prev_inline_ids=""
+prev_review_ids="[]"
+prev_inline_ids="[]"
 prev_conflict=""
 prev_clean=""
 
@@ -159,6 +160,12 @@ while true; do
   ')
   inline_count=$(echo "$inline_ids" | jq -r 'length')
 
+  # jq 失敗などで ID 集合が空文字になった場合に --argjson が壊れないようにする
+  review_ids="${review_ids:-[]}"
+  inline_ids="${inline_ids:-[]}"
+  reviews="${reviews:-0}"
+  inline_count="${inline_count:-0}"
+
   # クリーン状態（CI 全通過・pending なし・未対応コメントなし・conflict なし）。
   # pending は clean の判定にのみ使う (PENDING → IN_PROGRESS → SUCCESS の途中遷移では
   # clean は 0 のまま変化せず、pending が空へ遷移した瞬間に 0→1 となり ALL_PASSED を
@@ -169,20 +176,24 @@ while true; do
     clean="0"
   fi
 
-  # サブ状態ごとに前回値と比較し、変化したものだけイベントを発火する
-  if [ -n "$failed" ] && [ "$failed" != "$prev_failed" ]; then
+  # サブ状態ごとに「新規に増えた分」の差集合を取り、増分がある時だけイベントを発火する。
+  # 解消のみ (失敗チェックの回復・スレッドの resolve だけ) では発火しない
+  new_failed=$(comm -13 <(printf '%s\n' "$prev_failed" | sort -u) <(printf '%s\n' "$failed" | sort -u) | grep -v '^$' || true)
+  if [ -n "$new_failed" ]; then
     while IFS='|' read -r name link; do
       [ -z "$name" ] && continue
       # run_id は /runs/ 直後の数字を抽出する (末尾の数字だと .../runs/<run>/job/<job> 形式で
       # job_id を拾ってしまう。get-ci-logs.sh と同一ロジック)
       run_id=$(echo "$link" | grep -oE '/runs/[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "")
       echo "CI_FAILED:${name},${run_id}"
-    done <<< "$failed"
+    done <<< "$new_failed"
   fi
-  if [ "$reviews" != "0" ] && [ "$review_ids" != "$prev_review_ids" ]; then
+  new_review_n=$(jq -n --argjson prev "$prev_review_ids" --argjson cur "$review_ids" '($cur - $prev) | length')
+  if [ "$new_review_n" != "0" ]; then
     echo "NEW_REVIEW:count=${reviews}"
   fi
-  if [ "$inline_count" != "0" ] && [ "$inline_ids" != "$prev_inline_ids" ]; then
+  new_inline_n=$(jq -n --argjson prev "$prev_inline_ids" --argjson cur "$inline_ids" '($cur - $prev) | length')
+  if [ "$new_inline_n" != "0" ]; then
     echo "NEW_REVIEW_COMMENT:count=${inline_count}"
   fi
   if [ "$merge_conflict" = "1" ] && [ "$prev_conflict" != "1" ]; then
