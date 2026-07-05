@@ -18,11 +18,6 @@
       "description": "Delegate tasks to OpenAI Codex CLI agent"
     },
     {
-      "name": "him0-gemini",
-      "source": "./gemini",
-      "description": "Web search plugin using Gemini CLI"
-    },
-    {
       "name": "him0-character-skills",
       "source": "./character-skills",
       "description": "Character role-play skills - adds personality to Claude responses"
