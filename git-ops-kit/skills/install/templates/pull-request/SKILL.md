@@ -1,8 +1,8 @@
 ---
 name: "pull-request"
 description: "Create a Pull Request. If one has already been created, push the commit and update the PR title and description based on the latest changes."
-argument-hint: [--draft | -d] [--stack] [<Ticket-URL>]
-allowed-tools: TodoWrite Bash(gh *) Bash(git switch *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(git rev-parse *) Bash(git log *) Bash(git diff *) Bash(gh pr *) Skill(him0-git-ops:commit)
+argument-hint: "[--draft | -d] [--stack] [<Ticket-URL>]"
+allowed-tools: TodoWrite Bash(gh *) Bash(git switch *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(git rev-parse *) Bash(git log *) Bash(git diff *) Bash(gh pr *) Skill(commit)
 ---
 
 # Quick Reference
@@ -15,7 +15,7 @@ allowed-tools: TodoWrite Bash(gh *) Bash(git switch *) Bash(git add *) Bash(git 
 
 # Workflow
 
-Use `/him0-git-ops:commit --push` to commit and push changes.
+Use `/commit --push` to commit and push changes.
 If the current branch is the default branch, a new branch will be created automatically.
 
 ## Creating a New Pull Request
