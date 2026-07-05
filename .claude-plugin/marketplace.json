@@ -4,13 +4,13 @@
     "name": "him0",
     "email": "nakashimaorz@gmail.com"
   },
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Personal Claude Code plugin marketplace by him0",
   "plugins": [
     {
-      "name": "him0-git-ops",
-      "source": "./git-ops",
-      "description": "Git operations plugin for Claude Code"
+      "name": "him0-git-ops-kit",
+      "source": "./git-ops-kit",
+      "description": "Git operations skill templates - install and adapt them into your project's .claude/skills/"
     },
     {
       "name": "him0-codex",

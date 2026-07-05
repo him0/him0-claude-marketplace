@@ -1,0 +1,9 @@
+{
+  "name": "him0-git-ops-kit",
+  "version": "3.0.0",
+  "description": "Git operations skill templates - install and adapt them into your project's .claude/skills/",
+  "author": {
+    "name": "him0"
+  },
+  "skills": "./skills/"
+}
