@@ -1,7 +1,7 @@
 ---
 name: "install"
 description: "git-ops スキルテンプレートをプロジェクトの .claude/skills/ にインストールし、プロジェクトに合わせて最適化する。導入済みのものはテンプレートと比較して改善を提案する"
-argument-hint: "[<name>...] [--all] [--user] [--no-adapt]"
+argument-hint: "[<name>...] [--all] [--no-adapt]"
 allowed-tools: TodoWrite Read Write Edit Glob Grep AskUserQuestion Bash(ls *) Bash(cp *) Bash(mkdir *) Bash(diff *) Bash(git log *) Bash(git remote *) Bash(gh repo view *) Bash(gh pr list *)
 ---
 
@@ -11,7 +11,6 @@ allowed-tools: TodoWrite Read Write Edit Glob Grep AskUserQuestion Bash(ls *) Ba
 /him0-git-ops-kit:install                  # 状況を提示して対話的に選択
 /him0-git-ops-kit:install commit ship     # 指定テンプレートのみ対象
 /him0-git-ops-kit:install --all           # 未導入をすべて導入、導入済みは更新提案
-/him0-git-ops-kit:install --user          # ~/.claude/skills/ に導入 (個人用、adapt なし)
 /him0-git-ops-kit:install --no-adapt      # プロジェクト最適化をスキップしてそのままコピー
 ```
 
@@ -23,7 +22,7 @@ allowed-tools: TodoWrite Read Write Edit Glob Grep AskUserQuestion Bash(ls *) Ba
 
 ## 1. 状態の把握
 
-`${CLAUDE_SKILL_DIR}/templates/` 配下の各テンプレートについて、展開先 (`--user` なら `~/.claude/skills/`、それ以外は `.claude/skills/`) の同名ディレクトリの有無を確認し、分類する:
+`${CLAUDE_SKILL_DIR}/templates/` 配下の各テンプレートについて、展開先 (プロジェクトの `.claude/skills/`) の同名ディレクトリの有無を確認し、分類する:
 
 - 未導入: 展開先に同名ディレクトリがない
 - 導入済み: 展開先に同名ディレクトリがある (kit 由来か手書きかは区別しない。同名ならプロジェクト側がマスター)
@@ -40,8 +39,8 @@ allowed-tools: TodoWrite Read Write Edit Glob Grep AskUserQuestion Bash(ls *) Ba
 
 対象ごとに:
 
-1. `${CLAUDE_SKILL_DIR}/templates/<name>/` 一式を展開先 `<skills-dir>/<name>/` に再帰コピーする (scripts/ などの付属ファイルを含む)
-2. adapt フェーズを実行する (`--no-adapt` または `--user` の場合はスキップ)
+1. `${CLAUDE_SKILL_DIR}/templates/<name>/` 一式を展開先 `.claude/skills/<name>/` に再帰コピーする (scripts/ などの付属ファイルを含む)
+2. adapt フェーズを実行する (`--no-adapt` の場合はスキップ)
 
 ### adapt フェーズ (プロジェクト最適化)
 
@@ -84,7 +83,7 @@ allowed-tools: TodoWrite Read Write Edit Glob Grep AskUserQuestion Bash(ls *) Ba
 - 導入したスキル (adapt での主な変更点つき)
 - 更新提案して取り込んだ項目 / 見送った項目
 - スキップしたもの
-- 展開先がプロジェクトの場合、`.claude/skills/` の変更をコミットしてチームに共有するよう促す
+- `.claude/skills/` の変更をコミットしてチームに共有するよう促す
 
 # Templates
 
