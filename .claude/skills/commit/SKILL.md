@@ -50,7 +50,7 @@ Conventional Commits 形式を使用する:
 このリポジトリの慣習:
 
 - subject は英語で書く (例: `fix(git-ops-kit): emit only additions in watch events`)
-- scope にはプラグイン名またはコンポーネント名を使う (例: `git-ops-kit`, `status-line`, `skills`, `gemini`)
+- scope にはプラグイン名またはコンポーネント名を使う (例: `git-ops-kit`, `status-line`, `skills`, `codex`)
 
 ## type 一覧
 
