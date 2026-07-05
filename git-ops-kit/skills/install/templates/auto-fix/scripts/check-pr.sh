@@ -50,7 +50,7 @@ done
 auto_fix_marker="<!-- ClaudeCode:auto-fix -->"
 
 # bot / CI の持続的メタコメントマーカー (watch-pr.sh の同名変数と同期させる)
-persistent_meta_markers_json='[]'
+persistent_meta_markers_json='["<!-- This is an auto-generated comment: summarize by coderabbit.ai -->"]'
 
 # PR 情報
 pr_json=$(gh pr view --json number,headRefName,baseRefName,state,url,autoMergeRequest,mergeable,mergeStateStatus 2>/dev/null || echo "")

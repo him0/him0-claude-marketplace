@@ -1,6 +1,6 @@
 ---
 name: "commit"
-description: "commit changes to git repository and push if needed"
+description: "変更を git リポジトリにコミットし、必要に応じて push する"
 argument-hint: "[--push | -p] [--main | -m]"
 allowed-tools: TodoWrite Bash(gh *) Bash(git switch *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(git rev-parse *) Bash(git log *) Bash(git diff *)
 ---
@@ -9,51 +9,52 @@ allowed-tools: TodoWrite Bash(gh *) Bash(git switch *) Bash(git add *) Bash(git 
 
 ```bash
 /commit
-/commit --push  # Commit and push changes
-/commit --main  # Commit directly to the default branch without creating a new branch
-/commit -m -p   # Commit directly to the default branch and push
+/commit --push  # コミットして push する
+/commit --main  # ブランチを作らずデフォルトブランチに直接コミットする
+/commit -m -p   # デフォルトブランチに直接コミットして push する
 ```
 
 # Workflow
 
-Run these commands in parallel to gather information:
+以下のコマンドを並列実行して情報を集める:
+
 - `git status`
 - `git diff`
 - `git log --oneline -5`
-- `gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name'` (to get default branch)
+- `gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name'` (デフォルトブランチの取得)
 
-If `--main` or `-m` option is given, commit directly to the default branch without creating a new branch.
+`--main` または `-m` が指定された場合は、ブランチを作らずデフォルトブランチに直接コミットする。
 
-Otherwise, if the current branch is the default branch and there are differences, create a new branch.
-Give the branch an appropriate name and commit the changes.
+それ以外の場合、現在のブランチがデフォルトブランチで差分があるなら、新しいブランチを作成する。
+ブランチに適切な名前を付けて変更をコミットする。
 
-If `--push` or `-p` option is given, push the branch to the remote repository.
+`--push` または `-p` が指定された場合は、ブランチをリモートリポジトリに push する。
 
-# Commit Message
+# コミットメッセージ
 
-Use the Conventional Commits format for commit messages:
+Conventional Commits 形式を使用する:
 
 ```
 <type>(<scope>)!: <subject>
-(blank line)
+(空行)
 <body>
-(blank line)
-<footer / BREAKING CHANGE / related issue(s) etc.>
+(空行)
+<footer / BREAKING CHANGE / 関連 issue など>
 ```
 
-Required: type, subject
-Optional: scope, ! (breaking change), body, footer
+必須: type, subject
+任意: scope, ! (breaking change), body, footer
 
-## type list
+## type 一覧
 
-feat : New feature
-fix : Bug fix
-docs : Documentation only
-style : Formatting (whitespace, semicolons, etc.)
-refactor : Refactoring (not a feature, not a bug fix)
-perf : Performance improvement
-test : Add/modify tests
-build : Build system / dependencies / distribution
-ci : CI configuration / scripts
-chore : Chore (other than src / test)
-revert : Revert previous commit
+feat : 新機能
+fix : バグ修正
+docs : ドキュメントのみ
+style : フォーマット (空白、セミコロンなど)
+refactor : リファクタリング (機能追加でもバグ修正でもない)
+perf : パフォーマンス改善
+test : テストの追加・修正
+build : ビルドシステム / 依存関係 / 配布物
+ci : CI の設定 / スクリプト
+chore : 雑務 (src / test 以外)
+revert : 以前のコミットの取り消し

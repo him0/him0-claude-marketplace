@@ -33,8 +33,9 @@ auto_fix_marker="<!-- ClaudeCode:auto-fix -->"
 # 人手レビューではなく auto-fix が対応するアクションも存在しないため、未対応カウントから除外する。
 # プロジェクト固有の bot コメント（例: issue トラッカーのリンクバック、CI の進捗通知）が
 # あれば、その本文に含まれる HTML コメントマーカーをここに追加する。
-# 例: '["<!-- linear-linkback -->","<!-- some-ci-progress -->"]'
-persistent_meta_markers_json='[]'
+# デフォルトは CodeRabbit のサマリーコメントのみ（指摘はインラインコメントとして別途届くため、
+# サマリー本体は対応アクションのないメタコメント）。
+persistent_meta_markers_json='["<!-- This is an auto-generated comment: summarize by coderabbit.ai -->"]'
 
 # リポジトリ名はセッション中に変わらないため、ループ前に 1 回だけ解決する。
 repo_full=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null || echo "")

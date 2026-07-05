@@ -1,6 +1,6 @@
 ---
 name: "pull-request"
-description: "Create a Pull Request. If one has already been created, push the commit and update the PR title and description based on the latest changes."
+description: "Pull Request を作成する。既に作成済みの場合はコミットを push し、最新の変更に基づいて PR のタイトルと説明を更新する"
 argument-hint: "[--draft | -d] [--stack] [<Ticket-URL>]"
 allowed-tools: TodoWrite Bash(gh *) Bash(git switch *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(git rev-parse *) Bash(git log *) Bash(git diff *) Bash(gh pr *) Skill(commit)
 ---
@@ -9,39 +9,39 @@ allowed-tools: TodoWrite Bash(gh *) Bash(git switch *) Bash(git add *) Bash(git 
 
 ```bash
 /pull-request
-/pull-request --draft  # Create a draft PR
-/pull-request --stack  # Create stacked PR with current branch as base
+/pull-request --draft  # draft PR を作成する
+/pull-request --stack  # 現在のブランチを base にした stacked PR を作成する
 ```
 
 # Workflow
 
-Use `/commit --push` to commit and push changes.
-If the current branch is the default branch, a new branch will be created automatically.
+変更のコミットと push には `/commit --push` を使う。
+現在のブランチがデフォルトブランチの場合は、新しいブランチが自動で作成される。
 
-## Creating a New Pull Request
+## 新規 Pull Request の作成
 
-If no Pull Request exists, create one following the `.github/pull_request_template.md`.
-If the template includes Japanese, write the body in Japanese.
-If the `--draft` or `-d` option is provided, create a draft Pull Request instead.
+Pull Request が存在しない場合、`.github/pull_request_template.md` に従って作成する。
+テンプレートが日本語を含む場合は本文を日本語で書く。
+`--draft` または `-d` が指定された場合は draft Pull Request として作成する。
 
-<Ticket-URL> (optional). If supplied, use it in the PR description (and elsewhere as directed) following the `.github/pull_request_template.md` guidelines (e.g., reference or auto-close keywords).
+<Ticket-URL> (任意)。指定された場合は `.github/pull_request_template.md` の指示に従って PR の説明などで使用する (参照リンクや auto-close キーワードなど)。
 
-## Updating an Existing Pull Request
+## 既存 Pull Request の更新
 
-If a Pull Request already exists:
+Pull Request が既に存在する場合:
 
-1. Push the latest commits to the remote branch
-2. Review all commits in the PR (use `git log <default-branch>..HEAD`)
-3. Update the PR title and description using `gh pr edit`
-4. Rewrite the description based on all commits - do not append to avoid redundancy
+1. 最新のコミットをリモートブランチに push する
+2. PR に含まれる全コミットを確認する (`git log <default-branch>..HEAD` を使う)
+3. `gh pr edit` で PR のタイトルと説明を更新する
+4. 説明は全コミットに基づいて書き直す。冗長にならないよう追記はしない
 
-## Creating a Stacked Pull Request
+## Stacked Pull Request の作成
 
-If `--stack` option is provided:
+`--stack` が指定された場合:
 
-1. Get the current branch name (this will be the base branch for the new PR)
-2. Create a new branch with auto-generated name (e.g., `<current-branch>-part2`, `<current-branch>-part3`)
-3. Commit and push changes to the new branch
-4. Create a new PR with `gh pr create --base <current-branch>`
+1. 現在のブランチ名を取得する (これが新しい PR の base ブランチになる)
+2. 自動生成した名前で新しいブランチを作成する (例: `<current-branch>-part2`, `<current-branch>-part3`)
+3. 新しいブランチに変更をコミットして push する
+4. `gh pr create --base <current-branch>` で新しい PR を作成する
 
-This is useful for splitting a large PR into smaller, reviewable pieces.
+大きな PR をレビューしやすい単位に分割する際に有用。
