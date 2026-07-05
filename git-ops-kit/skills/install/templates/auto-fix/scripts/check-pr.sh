@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PR の状態・CI チェック・レビューコメントを一括取得して JSON で出力する
-# Usage: check-pr.sh [--ci-only] [--reviews-only]
+# Usage: check-pr.sh
 #
 # 出力 JSON 構造:
 # {
@@ -38,20 +38,6 @@
 # `meta_marker`: 本文に persistent_meta_markers_json のいずれかを含む場合 true。
 
 set -euo pipefail
-
-CI_ONLY=false
-REVIEWS_ONLY=false
-for arg in "$@"; do
-  case "$arg" in
-    --ci-only) CI_ONLY=true ;;
-    --reviews-only) REVIEWS_ONLY=true ;;
-  esac
-done
-
-if [ "$CI_ONLY" = true ] && [ "$REVIEWS_ONLY" = true ]; then
-  echo '{"error": "invalid_args", "message": "--ci-only and --reviews-only are mutually exclusive", "summary": {"status": "error"}}'
-  exit 0
-fi
 
 # マーカー定義 (auto_fix_marker / persistent_meta_markers_json) は共通定義から読み込む
 . "$(dirname "$0")/markers.sh"
@@ -91,89 +77,79 @@ else
 fi
 
 # CI チェック (provider を付与)
-ci_json="[]"
-if [ "$REVIEWS_ONLY" = false ]; then
-  raw_ci=$(gh pr checks "$pr_number" --json name,state,link 2>/dev/null || echo "[]")
-  ci_json=$(echo "$raw_ci" | jq '[
-    .[] | . + {
-      provider: (
-        if (.link // "" | test("github.com/.+/actions/runs/")) then "github-actions"
-        elif (.link // "" | test("circleci.com/")) then "circleci"
-        else "other"
-        end
-      )
-    }
-  ]')
-fi
+raw_ci=$(gh pr checks "$pr_number" --json name,state,link 2>/dev/null || echo "[]")
+ci_json=$(echo "$raw_ci" | jq '[
+  .[] | . + {
+    provider: (
+      if (.link // "" | test("github.com/.+/actions/runs/")) then "github-actions"
+      elif (.link // "" | test("circleci.com/")) then "circleci"
+      else "other"
+      end
+    )
+  }
+]')
 
 ci_failed=$(echo "$ci_json"  | jq '[.[] | select(.state == "FAILURE" or .state == "ERROR")]')
 ci_pending=$(echo "$ci_json" | jq '[.[] | select(.state == "PENDING" or .state == "IN_PROGRESS" or .state == "QUEUED")]')
 ci_passed=$(echo "$ci_json"  | jq '[.[] | select(.state == "SUCCESS")]')
 
 # レビュー / コメント
-unresolved_threads="[]"
-pr_reviews="[]"
-issue_comments="[]"
-changes_requested="[]"
+marker_filter=". + { claude_marker: ((.body // \"\") | contains(\$marker)), meta_marker: ((.body // \"\") | . as \$b | any(\$metas[]?; . as \$n | \$b | contains(\$n))) }"
 
-if [ "$CI_ONLY" = false ]; then
-  marker_filter=". + { claude_marker: ((.body // \"\") | contains(\$marker)), meta_marker: ((.body // \"\") | . as \$b | any(\$metas[]?; . as \$n | \$b | contains(\$n))) }"
-
-  # インラインレビュースレッド (GraphQL。isResolved を見るには GraphQL が必須)
-  thread_json=$(gh api graphql -f query='
-    query($owner: String!, $repo: String!, $number: Int!) {
-      repository(owner: $owner, name: $repo) {
-        pullRequest(number: $number) {
-          reviewThreads(first: 100) {
-            nodes {
-              id
-              isResolved
-              path
-              line
-              comments(first: 50) {
-                nodes { databaseId body author { login } }
-              }
+# インラインレビュースレッド (GraphQL。isResolved を見るには GraphQL が必須)
+thread_json=$(gh api graphql -f query='
+  query($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $number) {
+        reviewThreads(first: 100) {
+          nodes {
+            id
+            isResolved
+            path
+            line
+            comments(first: 50) {
+              nodes { databaseId body author { login } }
             }
           }
         }
       }
-    }' -F owner="$owner" -F repo="$repo_name" -F number="$pr_number" 2>/dev/null \
-    || echo '{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[]}}}}}')
+    }
+  }' -F owner="$owner" -F repo="$repo_name" -F number="$pr_number" 2>/dev/null \
+  || echo '{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[]}}}}}')
 
-  # 未解決スレッドのうち、最後のコメントが auto-fix / メタコメントでないもののみ
-  unresolved_threads=$(echo "$thread_json" | jq --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" '
+# 未解決スレッドのうち、最後のコメントが auto-fix / メタコメントでないもののみ
+unresolved_threads=$(echo "$thread_json" | jq --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" '
     def contains_any($needles): . as $body | any($needles[]?; . as $n | $body | contains($n));
-    [
-      .data.repository.pullRequest.reviewThreads.nodes[]?
-        | select(.isResolved == false)
-        | select(((.comments.nodes[-1].body) // "") | contains($marker) | not)
-        | select(((.comments.nodes[-1].body) // "") | contains_any($metas) | not)
-        | {
-            thread_id: .id,
-            path,
-            line,
-            comments: [.comments.nodes[] | {
-              id: .databaseId,
-              user: .author.login,
-              body,
-              claude_marker: ((.body // "") | contains($marker))
-            }]
-          }
-    ]')
+  [
+    .data.repository.pullRequest.reviewThreads.nodes[]?
+      | select(.isResolved == false)
+      | select(((.comments.nodes[-1].body) // "") | contains($marker) | not)
+      | select(((.comments.nodes[-1].body) // "") | contains_any($metas) | not)
+      | {
+          thread_id: .id,
+          path,
+          line,
+          comments: [.comments.nodes[] | {
+            id: .databaseId,
+            user: .author.login,
+            body,
+            claude_marker: ((.body // "") | contains($marker))
+          }]
+        }
+  ]')
 
-  # PR レベルのレビュー (approve / request changes / 全体コメント)
-  pr_reviews=$(gh pr view "$pr_number" --json reviews \
-    --jq '[.reviews[] | {id, author: .author.login, state, body, submitted_at: .submittedAt}]' 2>/dev/null \
-    | jq --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" "[.[] | $marker_filter]" 2>/dev/null || echo "[]")
+# PR レベルのレビュー (approve / request changes / 全体コメント)
+pr_reviews=$(gh pr view "$pr_number" --json reviews \
+  --jq '[.reviews[] | {id, author: .author.login, state, body, submitted_at: .submittedAt}]' 2>/dev/null \
+  | jq --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" "[.[] | $marker_filter]" 2>/dev/null || echo "[]")
 
-  # PR 会話コメント (issue comments)
-  issue_comments=$(gh api --paginate "repos/${owner_repo}/issues/${pr_number}/comments" \
-    --jq '[.[] | {id, user: .user.login, body, created_at}]' 2>/dev/null \
-    | jq --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" "[.[] | $marker_filter]" 2>/dev/null || echo "[]")
+# PR 会話コメント (issue comments)
+issue_comments=$(gh api --paginate "repos/${owner_repo}/issues/${pr_number}/comments" \
+  --jq '[.[] | {id, user: .user.login, body, created_at}]' 2>/dev/null \
+  | jq --arg marker "$auto_fix_marker" --argjson metas "$persistent_meta_markers_json" "[.[] | $marker_filter]" 2>/dev/null || echo "[]")
 
-  # CHANGES_REQUESTED レビュー
-  changes_requested=$(echo "$pr_reviews" | jq '[.[] | select(.state == "CHANGES_REQUESTED")]')
-fi
+# CHANGES_REQUESTED レビュー
+changes_requested=$(echo "$pr_reviews" | jq '[.[] | select(.state == "CHANGES_REQUESTED")]')
 
 # サマリー計算 (auto-fix 自身の返信・メタコメントはカウントから除外)
 #

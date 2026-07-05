@@ -1,7 +1,7 @@
 ---
 name: "auto-fix"
 description: "CI ステータスと PR レビューコメントを確認し、問題を自動修正してコミット＆プッシュする。CI 確認、テスト落ち修正、レビュー対応が必要な時に使用"
-argument-hint: "[--watch | -w] [--ci-only] [--reviews-only]"
+argument-hint: "[--watch | -w]"
 allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Bash(gh *) Bash(bash .claude/skills/auto-fix/scripts/*) Skill(commit) Skill(merge-base) Monitor TaskStop
 ---
 
@@ -9,8 +9,6 @@ allowed-tools: TodoWrite Read Write Edit Glob Grep Bash(git *) Bash(gh *) Bash(b
 
 ```bash
 /auto-fix                    # CI 失敗とレビューコメントを1回修正
-/auto-fix --ci-only          # CI 失敗のみ対象
-/auto-fix --reviews-only     # レビューコメントのみ対象
 /auto-fix --watch            # Monitor で継続監視し、マージ / クローズまで自動対応
 ```
 
@@ -180,7 +178,7 @@ Monitor 起動が成功したら、ユーザーに監視を開始した旨と「
 
 以下を並列実行:
 
-- `bash .claude/skills/auto-fix/scripts/check-pr.sh [--ci-only] [--reviews-only]` で PR・CI・レビュー状況を一括取得
+- `bash .claude/skills/auto-fix/scripts/check-pr.sh` で PR・CI・レビュー状況を一括取得
 - `git status` でワーキングツリーがクリーンか確認
 
 PR が見つからない (`summary.status` が `error`):
@@ -209,7 +207,7 @@ Watch モードで `MERGE_CONFLICT:*` を受信した時、または Step 1 が 
 3. `git push origin "$(git branch --show-current)"` で push する (`/commit --push` は使わない。merge コミットを含むため)。Step 2/3 のコード修正コミットがローカルに先行している場合も、先行コミット + merge コミットを 1 回の push で送信する
 4. push 後、Step 1 を再実行し、新しい `summary.status` で再分岐する (CI が再走するため通常 `PENDING` になる)
 
-## 2. CI 失敗の修正 (`--reviews-only` の場合はスキップ)
+## 2. CI 失敗の修正
 
 CI 修正に着手する前に、`pr.auto_merge_enabled` が true なら `gh pr merge --disable-auto` を実行する。
 
@@ -241,7 +239,7 @@ CI 修正に着手する前に、`pr.auto_merge_enabled` が true なら `gh pr 
 
 修正完了後の push 経路は Step 1 の分岐に従う。conflict 併発時は Step 4 ではなく Step 2a で push する。
 
-## 3. レビュー / コメントへの対応 (`--ci-only` の場合はスキップ)
+## 3. レビュー / コメントへの対応
 
 対応対象は `check-pr.sh` の出力のうち:
 
