@@ -88,10 +88,8 @@ allowed-tools: TodoWrite Read Write Edit Glob Grep AskUserQuestion Bash(ls *) Ba
 
 # Templates
 
-| name | 概要 |
-|------|------|
-| commit | Conventional Commits 形式でのコミット (ブランチ自動作成、--push, --main) |
-| pull-request | PR 作成・更新 (--draft, --stack, チケット URL 連携) |
-| merge-base | PR base ブランチの取り込みとコンフリクト自動解消 (--rebase) |
-| auto-fix | CI 失敗・レビューコメントの自動修正 (--watch でマージ / クローズまで継続監視) |
-| ship | 現在の diff を PR にして auto-fix --watch でマージ / クローズまで見守る |
+- commit: Conventional Commits 形式でのコミット (ブランチ自動作成、--push, --main)
+- pull-request: PR 作成・更新 (--draft, --stack, チケット URL 連携)
+- merge-base: PR base ブランチの取り込みとコンフリクト自動解消 (--rebase)
+- auto-fix: CI 失敗・レビューコメントの自動修正 (--watch でマージ / クローズまで継続監視)
+- ship: 現在の diff を PR にして auto-fix --watch でマージ / クローズまで見守る

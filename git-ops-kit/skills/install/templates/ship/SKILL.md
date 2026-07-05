@@ -7,7 +7,7 @@ allowed-tools: TodoWrite Read Glob Grep Bash(git status *) Bash(git diff *) Bash
 # Quick Reference
 
 ```bash
-/ship            # 現在の diff を PR にして、マージ / クローズまで見守る
+/ship # 現在の diff を PR にして、マージ / クローズまで見守る
 ```
 
 現在の作業内容 (未コミットの変更 + base から積んだコミット) を出荷するオーケストレーションスキル。実装は行わない。子スキル `commit` / `pull-request` / `auto-fix` を手順どおりに呼び出してまとめる。
@@ -71,12 +71,10 @@ ship はマージを実行しない・誘発しない。具体的に禁止する
 
 受信イベントごとの ship の対応:
 
-| イベント | 対応 |
-|---|---|
-| `ALL_PASSED` | 何もしない (非終了イベント。watch は監視を継続する) |
-| `MERGED` | 手順 5 へ (不変条件 1 により人間がマージした合図) |
-| `CLOSED` (未マージ) | 理由を確認してユーザーに報告し停止する |
-| auto-fix が同一エラー 3 回ガードで Monitor を停止 | ユーザーに報告して停止する |
+- `ALL_PASSED` → 何もしない (非終了イベント。watch は監視を継続する)
+- `MERGED` → 手順 5 へ (不変条件 1 により人間がマージした合図)
+- `CLOSED` (未マージ) → 理由を確認してユーザーに報告し停止する
+- auto-fix が同一エラー 3 回ガードで Monitor を停止 → ユーザーに報告して停止する
 
 ## 5. 完了レポート
 
