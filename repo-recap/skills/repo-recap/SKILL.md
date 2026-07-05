@@ -1,83 +1,46 @@
 ---
 name: repo-recap
-description: Generate a 2025 year-in-review visualization for a repository. Use when user asks for "repo recap", "年間レポート", "yearly summary", "2025 recap", or wants to see repository statistics and contributions. (user)
+description: Generate a year-in-review or half-year visualization for a repository. Use when user asks for "repo recap", "年間レポート", "上半期レポート", "下半期レポート", "yearly summary", "recap", or wants to see repository statistics and contributions.
 ---
 
-# Repo Recap 2025 - Repository Year in Review Generator
+# Repo Recap - Repository Year in Review Generator
 
-**重要**: Read/Writeツールを使わず、Bashのみで高速に生成します。
+リポジトリの1年 (または半期) を振り返る HTML レポートを生成します。
+データ収集から HTML 生成まで全てシェルスクリプトで完結するため、Read/Write ツールやデータの手動変換は不要です。
 
-## Step 1: データ収集 (並列実行)
+## 手順
 
-以下の4コマンドを**並列で**実行:
-
-```bash
-# コマンド1: コミットデータ
-git log --since="2025-01-01" --until="2025-12-31" --format="%ad|%aN|%s" --date=format:"%Y-%m-%d|%H|%u" 2>/dev/null
-
-# コマンド2: PR/Issueデータ
-gh pr list --state all --search "created:2025-01-01..2025-12-31" --json number,title,author,comments,additions,deletions,changedFiles --limit 100 2>/dev/null || echo "[]"
-gh issue list --state all --search "created:2025-01-01..2025-12-31" --json number,title,author,comments --limit 100 2>/dev/null || echo "[]"
-
-# コマンド3: リポジトリ名
-basename $(git rev-parse --show-toplevel)
-
-# コマンド4: コントリビューター名寄せマップ (GitHub API から取得)
-REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
-noglob gh api "repos/${REPO}/commits" --paginate --jq '.[] | .commit.author.name + "|" + (.author.login // "unknown")' 2>/dev/null | sort -u
-```
-
-コマンド4の出力から名寄せマップを作成:
-```
-# 出力例:
-# Hiroki Nakashima|him0
-# him0|him0
-# Claude|claude
-```
-→ `{"Hiroki Nakashima": "him0", "him0": "him0", "Claude": "claude"}` に変換
-
-## Step 2: データをJSONに変換
-
-コミットログの各行を以下の形式に変換（Claude Code内で処理）:
-```json
-{"date":"2025-12-25","hour":14,"day":4,"name":"Hiroki","message":"fix: bug"}
-```
-
-## Step 3: JSON書き出し & HTML生成
-
-**Bashのみで実行** (Read/Writeツール不要):
+1. 対象年と期間を決める。ユーザーの指定がなければ年は現在の年、期間は通年 (`full`)。
+   - 「上半期」と言われたら `h1` (1-6月)、「下半期」と言われたら `h2` (7-12月)
+2. スクリプトのディレクトリを解決する:
+   - `$CLAUDE_PLUGIN_ROOT` が設定されていれば `$CLAUDE_PLUGIN_ROOT/skills/repo-recap`
+   - 無ければこの SKILL.md が置かれているディレクトリ
+3. 以下を1コマンドで実行する (YEAR は対象年に置き換え):
 
 ```bash
-# JSONデータを一時ファイルに書き出し
-cat > /tmp/recap-data.json << 'JSONEOF'
-{
-  "repoName": "REPO_NAME_HERE",
-  "year": "2025",
-  "rawCommits": [RAW_COMMITS_ARRAY],
-  "prs": [PRS_ARRAY],
-  "issues": [ISSUES_ARRAY],
-  "contributorAliases": {"git author name": "github username", ...}
-}
-JSONEOF
+SKILL_DIR="${CLAUDE_PLUGIN_ROOT}/skills/repo-recap"
 
-# ジェネレータスクリプトでHTML生成
-SKILL_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "$0")")"
-# プラグインディレクトリのパスを使用
-"$HOME/.claude/plugins/cache/him0-claude-marketplace/him0-repo-recap/1.0.0/skills/repo-recap/generate-recap.sh" /tmp/recap-data.json > repo-recap-2025.html
+# 通年
+"$SKILL_DIR/collect-data.sh" YEAR | "$SKILL_DIR/generate-recap.sh" > repo-recap-YEAR.html
 
-# 一時ファイル削除
-rm /tmp/recap-data.json
+# 上半期 (h1) / 下半期 (h2)
+"$SKILL_DIR/collect-data.sh" YEAR h1 | "$SKILL_DIR/generate-recap.sh" > repo-recap-YEAR-h1.html
 ```
 
-## Step 4: ブラウザで開く
+4. ブラウザで開く:
 
 ```bash
-open repo-recap-2025.html   # macOS
+open repo-recap-YEAR.html   # macOS
 ```
+
+## スクリプトの役割
+
+- `collect-data.sh <year> [full|h1|h2]`: git log・GitHub PR/Issue・コントリビューター名寄せマップを収集し、期間情報つきの JSON を標準出力に出す
+- `generate-recap.sh [data.json]`: JSON (省略時は標準入力) をテンプレートに埋め込み、HTML を標準出力に出す。ヒートマップや月次チャートは JSON の期間に合わせて描画される
 
 ## Notes
 
-- テンプレートの読み書きはシェルスクリプトが行うため高速
-- GitHub avatarsは `https://github.com/{username}.png` から取得
-- 全データはHTML内に埋め込み、オフラインで動作
-- **名寄せ機能**: `contributorAliases` で git author name → GitHub username のマッピングを指定すると、同一人物の異なる名前表記を統合して集計
+- 依存: `git`, `jq` (必須)、`gh` (任意。無い場合や GitHub リポジトリでない場合は PR/Issue が空になるだけで動作する)
+- 名寄せ: noreply メールアドレスからローカルで解決し、GitHub API は1ページ (100件) だけ補完に使う。全コミットのページネーションはしない
+- GitHub avatar は `https://github.com/{username}.png` から取得。取得できない場合は ui-avatars.com にフォールバック
+- 失敗時のデバッグ: `collect-data.sh YEAR > /tmp/recap-data.json` で中間 JSON を確認できる
