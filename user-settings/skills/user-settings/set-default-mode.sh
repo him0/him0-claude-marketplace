@@ -42,16 +42,34 @@ fi
 
 BEFORE=$(jq -r '.permissions.defaultMode // "-"' "$SETTINGS")
 
-cp "$SETTINGS" "$SETTINGS.bak"
-
-TMP=$(mktemp "$SETTINGS.XXXXXX")
-if ! jq --arg mode "$MODE" '.permissions.defaultMode = $mode' "$SETTINGS" > "$TMP"; then
-  rm -f "$TMP"
-  echo "Error: failed to update $SETTINGS" >&2
+# set -e を使っていないので、書き換え系は毎回明示的に失敗を見る。
+# バックアップに失敗した状態で本体を置き換えないこと。
+if ! cp "$SETTINGS" "$SETTINGS.bak"; then
+  echo "Error: failed to back up $SETTINGS. 設定は変更していない" >&2
   exit 1
 fi
-mv "$TMP" "$SETTINGS"
-chmod 644 "$SETTINGS"
+
+TMP=$(mktemp "$SETTINGS.XXXXXX") || {
+  echo "Error: failed to create a temporary file next to $SETTINGS" >&2
+  exit 1
+}
+
+if ! jq --arg mode "$MODE" '.permissions.defaultMode = $mode' "$SETTINGS" > "$TMP"; then
+  rm -f "$TMP"
+  echo "Error: failed to update $SETTINGS. 設定は変更していない" >&2
+  exit 1
+fi
+
+if ! mv "$TMP" "$SETTINGS"; then
+  rm -f "$TMP"
+  echo "Error: failed to replace $SETTINGS. $SETTINGS.bak から復元すること" >&2
+  exit 1
+fi
+
+if ! chmod 644 "$SETTINGS"; then
+  echo "Error: updated $SETTINGS but failed to set its permissions to 644" >&2
+  exit 1
+fi
 
 AFTER=$(jq -r '.permissions.defaultMode // "-"' "$SETTINGS")
 

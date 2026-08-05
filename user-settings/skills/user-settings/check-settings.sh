@@ -40,6 +40,7 @@ read_key() {
   echo "${v:--}"
 }
 
+# defaultMode の値を日本語の説明に変換する
 label_of() {
   case "$1" in
     default|manual)     echo "Manual (毎回確認)" ;;
@@ -86,39 +87,68 @@ AUTO_DEFAULT="no"
 [ "$USER_MODE" = "auto" ] && AUTO_DEFAULT="yes"
 [ "$MANAGED_MODE" = "auto" ] && AUTO_DEFAULT="yes"
 
-# disableAutoMode がどこかで "disable" なら auto 自体が使えない
+# disableAutoMode はどのスコープに書いても効く (managed だと上書きされないだけ)
 AUTO_DISABLED="no"
-for f in "$MANAGED_SETTINGS" "$LOCAL_SETTINGS" "$PROJECT_SETTINGS" "$USER_SETTINGS"; do
-  [ "$(read_key "$f" '.permissions.disableAutoMode')" = "disable" ] && AUTO_DISABLED="yes"
-done
-
-# user が auto でも、より優先度の高いスコープが別の値を持つと上書きされる
-OVERRIDE="-"
-for scope_pair in "managed:$MANAGED_MODE" "local:$LOCAL_MODE" "project:$PROJECT_MODE"; do
+DISABLED_SCOPE="-"
+for scope_pair in "managed:$MANAGED_SETTINGS" "local:$LOCAL_SETTINGS" "project:$PROJECT_SETTINGS" "user:$USER_SETTINGS"; do
   scope="${scope_pair%%:*}"
-  mode="${scope_pair#*:}"
-  if [ "$mode" != "-" ] && [ "$mode" != "auto" ] && [ "$OVERRIDE" = "-" ]; then
-    OVERRIDE="$scope=$mode"
+  f="${scope_pair#*:}"
+  if [ "$(read_key "$f" '.permissions.disableAutoMode')" = "disable" ]; then
+    AUTO_DISABLED="yes"
+    [ "$DISABLED_SCOPE" = "-" ] && DISABLED_SCOPE="$scope"
   fi
 done
 
+# 優先度 (managed > local > project > user) に従って実際に効く defaultMode を解決する。
+# project / local の "auto" は Claude Code 側で無視されるので、解決時にも読み飛ばす。
+EFFECTIVE_MODE="-"
+EFFECTIVE_SCOPE="-"
+for scope_pair in "managed:$MANAGED_MODE" "local:$LOCAL_MODE" "project:$PROJECT_MODE" "user:$USER_MODE"; do
+  scope="${scope_pair%%:*}"
+  mode="${scope_pair#*:}"
+  [ "$mode" = "-" ] && continue
+  case "$scope:$mode" in
+    local:auto|project:auto) continue ;;
+  esac
+  EFFECTIVE_MODE="$mode"
+  EFFECTIVE_SCOPE="$scope"
+  break
+done
+if [ "$EFFECTIVE_MODE" = "-" ]; then
+  EFFECTIVE_MODE="default"
+  EFFECTIVE_SCOPE="none"
+fi
+
+# 実際にこのディレクトリで auto が効くか。disableAutoMode が入っていれば効かない
+EFFECTIVE_AUTO="no"
+if [ "$EFFECTIVE_MODE" = "auto" ] && [ "$AUTO_DISABLED" = "no" ]; then
+  EFFECTIVE_AUTO="yes"
+fi
+
 echo "[判定]"
+printf -- "- 実際に効く defaultMode: %s (%s スコープ)  -> %s\n" \
+  "$EFFECTIVE_MODE" "$EFFECTIVE_SCOPE" "$(label_of "$EFFECTIVE_MODE")"
 if [ "$AUTO_DEFAULT" = "yes" ]; then
-  echo "- デフォルトパーミッション auto: 設定済み"
+  echo "- user/managed に auto の設定: あり"
 else
-  echo "- デフォルトパーミッション auto: 未設定"
+  echo "- user/managed に auto の設定: なし"
+fi
+if [ "$EFFECTIVE_AUTO" = "yes" ]; then
+  echo "- このディレクトリで auto が効くか: yes"
+else
+  echo "- このディレクトリで auto が効くか: no"
 fi
 
 if [ "$AUTO_DISABLED" = "yes" ]; then
-  echo "- 警告: permissions.disableAutoMode が \"disable\" になっているため auto は使えない"
+  echo "- 警告: $DISABLED_SCOPE の permissions.disableAutoMode が \"disable\" のため auto は使えない"
 fi
 
 if [ "$PROJECT_MODE" = "auto" ] || [ "$LOCAL_MODE" = "auto" ]; then
   echo "- 警告: project/local の settings.json にある defaultMode: \"auto\" は無視される (リポジトリが自身に auto を許可できないため)。~/.claude/settings.json に書くこと"
 fi
 
-if [ "$AUTO_DEFAULT" = "yes" ] && [ "$OVERRIDE" != "-" ]; then
-  echo "- 警告: 優先度の高いスコープが上書きしている ($OVERRIDE)。このディレクトリでは user の auto は効かない"
+if [ "$AUTO_DEFAULT" = "yes" ] && [ "$EFFECTIVE_MODE" != "auto" ]; then
+  echo "- 警告: 優先度の高い $EFFECTIVE_SCOPE スコープが $EFFECTIVE_MODE で上書きしている。このディレクトリでは user/managed の auto は効かない"
 fi
 
 if [ "$USER_STATE" = "invalid" ]; then
@@ -152,4 +182,4 @@ else
 fi
 echo
 
-echo "RESULT: default_mode_auto=$AUTO_DEFAULT auto_mode_disabled=$AUTO_DISABLED user_mode=$USER_MODE user_settings_state=$USER_STATE override=$OVERRIDE"
+echo "RESULT: effective_auto=$EFFECTIVE_AUTO effective_mode=$EFFECTIVE_MODE effective_scope=$EFFECTIVE_SCOPE default_mode_auto=$AUTO_DEFAULT auto_mode_disabled=$AUTO_DISABLED user_mode=$USER_MODE user_settings_state=$USER_STATE"

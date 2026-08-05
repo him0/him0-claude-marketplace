@@ -10,21 +10,26 @@ description: "Check and configure Claude Code user settings (~/.claude/settings.
 
 ## 手順
 
-1. スクリプトのディレクトリを解決する:
-   - `$CLAUDE_PLUGIN_ROOT` があれば `$CLAUDE_PLUGIN_ROOT/skills/user-settings`
-   - 無ければこの SKILL.md が置かれているディレクトリ
+1. スクリプトのディレクトリ `SKILL_DIR` を決める:
+   - `$CLAUDE_PLUGIN_ROOT` が設定されていれば `$CLAUDE_PLUGIN_ROOT/skills/user-settings`
+   - 設定されていなければ、この SKILL.md が置かれているディレクトリそのもの
 
-2. 現状を確認する (読み取りのみ。書き換えはしない):
+2. 現状を確認する (読み取りのみ。書き換えはしない)。
+   `<SKILL_DIR>` は手順1で決めた実際のパスに置き換えてから実行する:
 
 ```bash
-SKILL_DIR="${CLAUDE_PLUGIN_ROOT}/skills/user-settings"
+SKILL_DIR="<手順1で決めたパス>"
 "$SKILL_DIR/check-settings.sh"
 ```
 
-3. 出力末尾の `RESULT:` 行で判定する:
-   - `default_mode_auto=yes` → auto 設定済み。ユーザーに報告して終了
-   - `default_mode_auto=no` → 未設定。現在の値と auto にするかどうかをユーザーに確認する
-   - `auto_mode_disabled=yes` → `disableAutoMode` により auto が封じられている。設定変更しても効かないので、その旨を伝える
+3. 出力末尾の `RESULT:` 行で判定する。`effective_` 系がそのディレクトリで実際に効く値:
+   - `effective_auto=yes` → auto が実際に効いている。ユーザーに報告して終了
+   - `effective_auto=no` かつ `default_mode_auto=yes` → user/managed に auto はあるが効いていない。
+     `effective_scope` と `effective_mode` (優先度の高いスコープによる上書き) か `auto_mode_disabled=yes` が原因。
+     どちらかを伝える。上書きが原因の場合、user settings を書き換えても解決しない
+   - `effective_auto=no` かつ `default_mode_auto=no` → 未設定。現在の `effective_mode` を伝え、
+     auto にするかどうかをユーザーに確認する
+   - `auto_mode_disabled=yes` → `disableAutoMode` により auto が封じられている。設定変更しても効かない
    - `user_settings_state=invalid` → JSON が壊れている。先に修復する
 
 4. ユーザーが auto を望む場合のみ書き換える:
@@ -33,7 +38,9 @@ SKILL_DIR="${CLAUDE_PLUGIN_ROOT}/skills/user-settings"
 "$SKILL_DIR/set-default-mode.sh" auto
 ```
 
-5. 書き換え後にもう一度 `check-settings.sh` を実行して反映を確認し、次回セッションから適用される旨を伝える。
+5. 書き換え後にもう一度 `check-settings.sh` を実行し、`effective_auto=yes` になったことを確認する。
+   `effective_auto=no` のままなら上書きか `disableAutoMode` が残っているので、その原因を伝える。
+   反映は次回セッションから。
 
 ## permissions.defaultMode の値
 
@@ -51,7 +58,8 @@ SKILL_DIR="${CLAUDE_PLUGIN_ROOT}/skills/user-settings"
   (リポジトリが自分自身に auto を与えられないようにするため)
 - 優先度は managed > local > project > user。project/local が `defaultMode` に別の値を持つと、
   そのディレクトリでは user の auto は上書きされる
-- 組織の managed 設定で `permissions.disableAutoMode: "disable"` が入っていると auto は選べない
+- `permissions.disableAutoMode: "disable"` が入っていると auto は選べない。
+  これはどのスコープの settings.json に書いても効く (managed に置くと上書きされないだけ)
 - auto はプロンプトを減らすだけで安全を保証するものではない。ユーザーに確認せず勝手に設定しない
 
 設定される JSON はこの形:
@@ -70,6 +78,7 @@ SKILL_DIR="${CLAUDE_PLUGIN_ROOT}/skills/user-settings"
 
 - 各スコープの settings.json の存在と JSON の妥当性
 - 各スコープの `permissions.defaultMode`
+- 優先度を解決した結果、実際に効く `defaultMode` とそのスコープ
 - user の `allow` / `ask` / `deny` / `additionalDirectories` の件数
 - `model`, `effortLevel`, `outputStyle`, `statusLine`, `env` のキー, `hooks` のイベント名, トップレベルキー一覧
 
