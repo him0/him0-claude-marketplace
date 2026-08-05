@@ -1,17 +1,17 @@
 ---
-name: user-settings
-description: "Check and configure Claude Code user settings (~/.claude/settings.json), especially whether the default permission mode is auto. Use when the user asks about settings.json, permission mode, デフォルトパーミッション, auto mode, 設定確認, or wants to change defaultMode / model / statusLine / permissions rules."
+name: user-settings-doctor
+description: "Diagnose and configure Claude Code user settings (~/.claude/settings.json), especially whether the default permission mode is auto. Use when the user asks about settings.json, permission mode, デフォルトパーミッション, auto mode, 設定確認, 設定診断, or wants to change defaultMode / model / statusLine / permissions rules."
 ---
 
-# Claude Code User Settings
+# Claude Code User Settings Doctor
 
-`~/.claude/settings.json` の内容を確認し、必要なら書き換えます。
+`~/.claude/settings.json` の内容を診断し、必要なら書き換えます。
 主目的は「デフォルトパーミッションが auto になっているか」の確認と設定です。
 
 ## 手順
 
 1. スクリプトのディレクトリ `SKILL_DIR` を決める:
-   - `$CLAUDE_PLUGIN_ROOT` が設定されていれば `$CLAUDE_PLUGIN_ROOT/skills/user-settings`
+   - `$CLAUDE_PLUGIN_ROOT` が設定されていれば `$CLAUDE_PLUGIN_ROOT/skills/user-settings-doctor`
    - 設定されていなければ、この SKILL.md が置かれているディレクトリそのもの
 
 2. 現状を確認する (読み取りのみ。書き換えはしない)。
