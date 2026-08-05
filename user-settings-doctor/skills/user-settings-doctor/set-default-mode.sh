@@ -77,7 +77,11 @@ echo "updated: $SETTINGS"
 echo "backup : $SETTINGS.bak"
 echo "permissions.defaultMode: $BEFORE -> $AFTER"
 
+echo
 if [ "$MODE" = "auto" ]; then
-  echo
-  echo "Note: auto は user / managed スコープでのみ有効。次のセッションから適用される"
+  echo "Note: auto は user / managed スコープでのみ有効"
 fi
+
+# defaultMode はセッション開始時のモードを決める設定なので、
+# ファイルが再読み込みされても実行中のセッションのモードは切り替わらない。
+echo "Note: 実行中のセッションのモードは変わらない。切り替えるには CLI なら Shift+Tab を使う"

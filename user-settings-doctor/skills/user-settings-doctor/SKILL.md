@@ -40,7 +40,9 @@ SKILL_DIR="<手順1で決めたパス>"
 
 5. 書き換え後にもう一度 `check-settings.sh` を実行し、`effective_auto=yes` になったことを確認する。
    `effective_auto=no` のままなら上書きか `disableAutoMode` が残っているので、その原因を伝える。
-   反映は次回セッションから。
+   `defaultMode` はセッションの開始時モードを決める設定なので、実行中のセッションのモードは
+   これを書き換えても切り替わらない。今のセッションで切り替えるには CLI なら `Shift+Tab` を使う、
+   と伝えること。
 
 ## permissions.defaultMode の値
 
@@ -86,12 +88,20 @@ SKILL_DIR="<手順1で決めたパス>"
 
 `set-default-mode.sh` は `permissions.defaultMode` 専用。
 他のキー (`model`, `statusLine`, `env`, `hooks`, `permissions.allow` など) を変えるときは、
-`~/.claude/settings.json` を Read してから Edit する。バックアップを取ってから編集し、
-編集後に `jq . ~/.claude/settings.json` で JSON が壊れていないか確認すること。
+対象ファイルを自分で編集する。
+
+対象ファイルは `check-settings.sh` / `set-default-mode.sh` と同じ解決規則で決めること。
+`check-settings.sh` の出力の `[設定ファイル]` にある `user` の行がそのパスなので、それを使う
+(`CLAUDE_CONFIG_DIR` があれば `$CLAUDE_CONFIG_DIR/settings.json`、無ければ `~/.claude/settings.json`)。
+
+そのパスを Read してから Edit する。バックアップを取ってから編集し、編集後に
+`jq . "<そのパス>"` で JSON が壊れていないか確認すること。
 
 ## Notes
 
 - 依存: `jq` (必須)、`git` (任意。プロジェクト設定のパス解決に使う)
 - `CLAUDE_CONFIG_DIR` が設定されている環境では、そのディレクトリの `settings.json` を対象にする
 - `~/.claude/` は保護パスなので、書き込み時は permission プロンプトが出る。これは正常な挙動
-- 設定の反映: `permissions` は保存時に再読み込みされるが、`model` と `outputStyle` は再起動が必要
+- 設定の反映: `permissions` を含むほとんどの設定は保存時に再読み込みされる
+  (`model` と `outputStyle` は再起動が必要)。ただし `defaultMode` が決めるのは
+  セッションの開始時モードなので、再読み込みされても実行中のセッションのモードは変わらない
