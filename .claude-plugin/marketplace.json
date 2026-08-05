@@ -4,7 +4,7 @@
     "name": "him0",
     "email": "nakashimaorz@gmail.com"
   },
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Personal Claude Code plugin marketplace by him0",
   "plugins": [
     {
@@ -31,6 +31,11 @@
       "name": "him0-repo-recap",
       "source": "./repo-recap",
       "description": "Generate a beautiful 2025 year-in-review visualization for your repository"
+    },
+    {
+      "name": "him0-user-settings",
+      "source": "./user-settings",
+      "description": "Check and configure Claude Code user settings, including whether the default permission mode is auto"
     }
   ]
 }
