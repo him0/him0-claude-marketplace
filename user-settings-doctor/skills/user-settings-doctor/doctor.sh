@@ -212,6 +212,11 @@ apply_fixes() {
     echo "Error: failed to back up $USER_SETTINGS. 設定は変更していない" >&2
     return 1
   fi
+  # バックアップも本体と同じ中身なので、同じく所有者のみ読み書き可にする
+  if ! chmod 600 "$USER_SETTINGS.bak"; then
+    echo "Error: failed to set permissions on $USER_SETTINGS.bak. 設定は変更していない" >&2
+    return 1
+  fi
   echo "- backup : $USER_SETTINGS.bak"
 
   while IFS='|' read -r id path expected label; do
@@ -241,8 +246,10 @@ apply_fixes() {
       echo "Error: failed to replace $USER_SETTINGS. $USER_SETTINGS.bak から復元すること" >&2
       return 1
     fi
-    if ! chmod 644 "$USER_SETTINGS"; then
-      echo "Error: updated $USER_SETTINGS but failed to set its permissions to 644" >&2
+    # settings.json は env.ANTHROPIC_AUTH_TOKEN のような資格情報を含みうるので、
+    # 所有者のみ読み書き可にする。mktemp も 600 で作るが、明示しておく。
+    if ! chmod 600 "$USER_SETTINGS"; then
+      echo "Error: updated $USER_SETTINGS but failed to set its permissions to 600" >&2
       return 1
     fi
 

@@ -1,6 +1,6 @@
 ---
 name: user-settings-doctor
-description: "Diagnose and fix Claude Code user settings (~/.claude/settings.json). Use when the user asks about settings.json, permission mode, デフォルトパーミッション, auto mode, 設定確認, 設定診断, or wants their Claude Code settings checked or corrected."
+description: "Diagnose and fix Claude Code user settings (~/.claude/settings.json, or $CLAUDE_CONFIG_DIR/settings.json when that variable is set). Use when the user asks about settings.json, permission mode, デフォルトパーミッション, auto mode, 設定確認, 設定診断, or wants their Claude Code settings checked or corrected."
 ---
 
 # Claude Code User Settings Doctor
