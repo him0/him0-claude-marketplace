@@ -1,6 +1,7 @@
 ---
 name: user-settings-doctor
 description: "Diagnose and fix Claude Code user settings (~/.claude/settings.json, or $CLAUDE_CONFIG_DIR/settings.json when that variable is set). Use when the user asks about settings.json, permission mode, デフォルトパーミッション, auto mode, 設定確認, 設定診断, or wants their Claude Code settings checked or corrected."
+allowed-tools: "Bash(${CLAUDE_SKILL_DIR}/doctor.sh)"
 ---
 
 # Claude Code User Settings Doctor
@@ -12,19 +13,13 @@ description: "Diagnose and fix Claude Code user settings (~/.claude/settings.jso
 
 ## 手順
 
-1. スクリプトのディレクトリ `SKILL_DIR` を決める:
-   - `$CLAUDE_PLUGIN_ROOT` が設定されていれば `$CLAUDE_PLUGIN_ROOT/skills/user-settings-doctor`
-   - 設定されていなければ、この SKILL.md が置かれているディレクトリそのもの
-
-2. 診断する。`--fix` を付けない限り設定ファイルは一切変更されない。
-   `<SKILL_DIR>` は手順1で決めた実際のパスに置き換えてから実行する:
+1. 診断する。`--fix` を付けない限り設定ファイルは一切変更されない:
 
 ```bash
-SKILL_DIR="<手順1で決めたパス>"
-"$SKILL_DIR/doctor.sh"
+${CLAUDE_SKILL_DIR}/doctor.sh
 ```
 
-3. 出力末尾の `RESULT:` 行で分岐する:
+2. 出力末尾の `RESULT:` 行で分岐する:
    - `ng=0` → 問題なし。`[診断]` の内容を要約して報告し、終了
    - `ng>0` かつ `fixable>0` → 直せる項目がある。`[NG]` の項目名・現在値・期待値と、
      なぜその値が良いかをユーザーに伝え、`--fix` を実行してよいか確認する
@@ -33,13 +28,13 @@ SKILL_DIR="<手順1で決めたパス>"
    - `user_settings_state=invalid` → JSON が壊れていて設定全体が読み込まれない。
      `--fix` も実行できないので、先に手で修復する
 
-4. ユーザーが同意した項目がある場合のみ書き換える:
+3. ユーザーが同意した項目がある場合のみ書き換える:
 
 ```bash
-"$SKILL_DIR/doctor.sh" --fix
+${CLAUDE_SKILL_DIR}/doctor.sh --fix
 ```
 
-5. `--fix` の出力に含まれる `[修正後の再診断]` と `RESULT:` で反映を確認し、結果を報告する。
+4. `--fix` の出力に含まれる `[修正後の再診断]` と `RESULT:` で反映を確認し、結果を報告する。
 
 ## 出力の読み方
 
@@ -68,6 +63,11 @@ SKILL_DIR="<手順1で決めたパス>"
 ## Notes
 
 - 依存: `jq` (必須)、`git` (任意。プロジェクト設定のパス解決に使う)
+- `${CLAUDE_SKILL_DIR}` は Claude Code がこの SKILL.md の置かれたディレクトリに置換する。
+  personal / project / plugin のどこにインストールされていても、また現在の作業ディレクトリが
+  どこでも同じように解決されるので、パスを組み立てる手順は不要
+- `allowed-tools` は引数なしの `doctor.sh` (読み取り専用の診断) だけを許可している。
+  完全一致のルールなので `--fix` は含まれず、書き換え時は permission プロンプトが出る
 - `--fix` は設定ファイルを書き換える。ユーザーに確認せず勝手に実行しない
 - `--fix` は書き換え前に `.bak` を作り、対象キー以外は保持する
 - `~/.claude/` は保護パスなので、書き込み時は permission プロンプトが出る。これは正常な挙動
